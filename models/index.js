@@ -2,10 +2,17 @@ const dbConfig = require("../config/db.config");
 const fs = require('fs');
 const path = require('path');
 const { Sequelize } = require("sequelize");
+const Op = Sequelize.Op;
+const operatorsAliases = {
+    $gt: Op.gt,
+    $or: Op.or,
+    $and: Op.and,
+    $like: Op.like
+}
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
     host: dbConfig.HOST,
     dialect: dbConfig.dialect,
-    operatorsAliases: false,
+    operatorsAliases,
     logging: true,
     pool: {
         max: dbConfig.pool.max,

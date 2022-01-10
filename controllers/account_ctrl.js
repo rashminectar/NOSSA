@@ -4,7 +4,7 @@ const config = require('../config');
 const db = require("../models");
 const bcrypt = require('bcryptjs');
 const salt = bcrypt.genSaltSync(10);
-const user = db.account;
+const user = db.users;
 const Op = db.Sequelize.Op;
 const utility = require('../helpers/utility')
 const validation = require('../helpers/validation')
@@ -12,21 +12,18 @@ const Constant = require('../config/constant')
 const mailer = require('../lib/mailer')
 let account = {};
 
-
 account.userRegistration = async (req, res) => {
-
   try {
-    let { image } = req.body;
-    let profile_img = "";
-    let userData = await validation.checkUserData(req.body)
+    let { profileImg } = req.body;
+    let userData = await validation.checkUserData(req.body);
     if (userData.message) {
-      return res.json({
+      return res.status(Constant.ERROR_CODE).json({
         code: Constant.ERROR_CODE,
         massage: Constant.INVAILID_DATA,
         data: userData.message
       })
     } else {
-      userData.verification_token = utility.randomString(24);
+      userData.verificationToken = utility.randomString(24);
       let result = await user.findAll({
         where: {
           email: userData.email
@@ -34,54 +31,96 @@ account.userRegistration = async (req, res) => {
       })
       if (result.length > 0) {
 
-        return res.json({
+        return res.status(Constant.FORBIDDEN_CODE).json({
           code: Constant.FORBIDDEN_CODE,
           massage: Constant.EMAIL_ALREADY_REGISTERED,
           data: null
         })
       } else {
-
         userData.password = bcrypt.hashSync(userData.password, salt);
-        let result = await user.create(userData);
-
-        if (image) {
-          profile_img = await utility.uploadBase64Image(image)
-
-          let userData = {
-            profile_img: profile_img
-
-          }
-          result.update(userData)
+        if (profileImg) {
+          userData.profileImg = await utility.uploadBase64Image(profileImg);
         }
 
+        let result = await user.create(userData);
+
         let mailOptions = {
-          from: 'vikas <vikas.kushwah@nectarinfotel.com>',
+          from: process.env.MAIL_FROM,
           to: userData.email,
           subject: 'nossa',
           text: 'Email verification link',
-          html: '<h1>Email verification lik<h1>: http://localhost:3000/account/emailVerification/' + userData.verification_token
+          html: '<h1>Email verification link<h1>: http://localhost:3001/account/emailVerification/' + userData.verificationToken
         }
         await mailer.sendEmail(mailOptions)
-        return res.json({
+        return res.status(Constant.SUCCESS_CODE).json({
           code: Constant.SUCCESS_CODE,
           massage: Constant.USER_SAVE_SUCCESS,
           data: result
         })
-
       }
     }
-
-  }
-  catch (err) {
-
-    return res.json({
-      code: Constant.ERROR_CODE,
+  } catch (err) {
+    return res.status(Constant.SERVER_ERROR).json({
+      code: Constant.SERVER_ERROR,
       massage: Constant.SOMETHING_WENT_WRONG,
       data: null
     })
-
   }
+}
 
+account.userLogin = async (req, res) => {
+  try {
+    let { userName, password } = req.body;
+    let userData = {
+      userName: userName,
+      password: password
+    }
+    let data = await validation.userLogin(userData)
+
+    if (data.message) {
+      return res.status(Constant.ERROR_CODE).json({
+        code: Constant.ERROR_CODE,
+        massage: Constant.INVAILID_DATA,
+        data: data.message
+      })
+    } else {
+      let result = await user.findOne({
+        where: {
+          email: userName
+        }
+      })
+      if (bcrypt.compareSync(password, result.password)) {
+        let params = {
+          userId: result.id,
+          firstName: result.firstName,
+          lastName: result.lastName,
+          email: result.email,
+          gendar: result.gendar,
+          role: result.role,
+          phone: result.phone,
+          profileImg: result.profileImg
+        }
+        params.jwtToken = jwt.sign(params, process.env.SECRET);
+        return res.status(Constant.SUCCESS_CODE).json({
+          code: Constant.SUCCESS_CODE,
+          massage: Constant.USER_LOGIN_SUCCESS,
+          data: params
+        })
+      } else {
+        return res.status(Constant.FORBIDDEN_CODE).json({
+          code: Constant.FORBIDDEN_CODE,
+          massage: Constant.USER_EMAIL_PASSWORD,
+          data: null
+        })
+      }
+    }
+  } catch (error) {
+    return res.status(Constant.SERVER_ERROR).json({
+      code: Constant.SERVER_ERROR,
+      massage: Constant.SOMETHING_WENT_WRONG,
+      data: null
+    })
+  }
 }
 
 account.getUserByToken = async (req, res) => {
@@ -99,26 +138,26 @@ account.getUserByToken = async (req, res) => {
 
       result = {
         userId: result.id,
-        first_name: result.first_name,
-        last_name: result.last_name,
+        firstName: result.firstName,
+        lastName: result.lastName,
         email: result.email,
         gendar: result.gendar,
         role: result.role,
         city: result.city,
         phone: result.phone,
         dob_date: result.dob_date,
-        profile_img: result.profile_img
+        profileImg: result.profileImg
       }
     }
 
-    return res.json({
+    return res.status(Constant.SUCCESS_CODE).json({
       code: Constant.SUCCESS_CODE,
       massage: Constant.USER_VERIFICATION_SUCCESS,
       data: result
     })
   } catch (error) {
-    return res.json({
-      code: Constant.INVALID_CODE,
+    return res.status(Constant.SERVER_ERROR).json({
+      code: Constant.SERVER_ERROR,
       massage: Constant.INVALID_TOKEN,
       data: null
     })
@@ -128,100 +167,40 @@ account.getUserByToken = async (req, res) => {
 account.emailVerification = async (req, res) => {
   try {
     let { token } = req.params;
-
-
     user.findOne({
       where: {
-        verification_token: token
+        verificationToken: token
       }
     }).then(data => {
       if (data) {
-        data.update({ verification_token: '', status: true });
-
-        return res.json({
+        data.update({ verificationToken: '', status: true });
+        return res.status(Constant.SUCCESS_CODE).json({
           code: Constant.SUCCESS_CODE,
           data: null,
           message: Constant.EMAIL_VERIFIED
         });
       } else {
-
-        return res.json({
-          code: Constant.SUCCESS_CODE,
+        return res.status(Constant.ERROR_CODE).json({
+          code: Constant.ERROR_CODE,
           data: data,
           message: Constant.INVALID_TOKEN
         });
       }
-
-
+    }).catch(error => {
+      return res.status(Constant.SERVER_ERROR).json({
+        code: Constant.SERVER_ERROR,
+        massage: Constant.SOMETHING_WENT_WRONG,
+        data: null
+      })
     })
-
   } catch (error) {
-    return res.json({
-      code: Constant.ERROR_CODE,
+    return res.status(Constant.SERVER_ERROR).json({
+      code: Constant.SERVER_ERROR,
       massage: Constant.SOMETHING_WENT_WRONG,
       data: null
     })
   }
 
-}
-
-account.userLogin = async (req, res) => {
-  try {
-    let { username, password } = req.body;
-    let userData = {
-      username: username,
-      password: password
-    }
-    let data = await validation.userLogin(userData)
-
-    if (data.message) {
-      return res.json({
-        code: Constant.ERROR_CODE,
-        massage: Constant.INVAILID_DATA,
-        data: data.message
-      })
-    } else {
-      let result = await user.findOne({
-        where: {
-          email: username
-        }
-      })
-      if (bcrypt.compareSync(password, result.password)) {
-        let params = {
-          userId: result.id,
-          first_name: result.first_name,
-          last_name: result.last_name,
-          email: result.email,
-          gendar: result.gendar,
-          role: result.role,
-          phone: result.phone,
-          dob_date: result.dob_date,
-          profile_img: result.profile_img
-        }
-        params.jwtToken = jwt.sign(params, process.env.SECRET);
-        return res.json({
-          code: Constant.SUCCESS_CODE,
-          massage: Constant.USER_LOGIN_SUCCESS,
-          data: params
-        })
-      } else {
-        return res.json({
-          code: Constant.FORBIDDEN_CODE,
-          massage: Constant.USER_EMAIL_PASSWORD,
-          data: null
-        })
-
-      }
-
-
-    }
-  } catch (error) {
-    return res.json({
-      code: Constant.ERROR_CODE,
-      massage: Constant.SOMETHING_WENT_WRONG,
-      data: null
-    })
-  }
 }
 
 account.forgotPassword = async (req, res) => {
@@ -236,30 +215,30 @@ account.forgotPassword = async (req, res) => {
         var Token = await utility.generateToken(20);
         let resetPasswordExpires = Date.now() + 3600000;
         var UserData = {
-          verification_token: Token,
+          verificationToken: Token,
           resetPasswordExpires: resetPasswordExpires, // 1 hour
         }
 
         result.update(UserData);
 
         let mailOptions = {
-          from: 'vikas <vikas.kushwah@nectarinfotel.com>',
+          from: process.env.MAIL_FROM,
           to: email,
           subject: 'Forgot password',
           text: '',
-          html: '<h1>Forgot password<h1>link : http://localhost:3000/account/emailVerification/' + Token
+          html: '<h1>Forgot password<h1>link : http://localhost:3000/resetpassword/' + Token
         }
 
         await mailer.sendEmail(mailOptions)
 
-        return res.json({
+        return res.status(Constant.SUCCESS_CODE).json({
           code: Constant.SUCCESS_CODE,
           message: Constant.SENT_FORGOT_EMAIL,
           data: null
         });
       } else {
 
-        return res.json({
+        return res.status(Constant.ERROR_CODE).json({
           code: Constant.ERROR_CODE,
           data: null,
           message: Constant.USER_EMAIL_NOT_REGISTERED
@@ -270,8 +249,53 @@ account.forgotPassword = async (req, res) => {
 
 
   } catch (error) {
-    return res.json({
-      code: Constant.ERROR_CODE,
+    return res.status(Constant.SERVER_ERROR).json({
+      code: Constant.SERVER_ERROR,
+      massage: Constant.SOMETHING_WENT_WRONG,
+      data: null
+    })
+  }
+}
+
+account.resetPasswordVerification = async (req, res) => {
+  try {
+    let { token } = req.params;
+    user.findOne({
+      where: {
+        verificationToken: token
+      }
+    }).then(data => {
+      if (data) {
+        if (data.resetPasswordExpires >= Date.now()) {
+          return res.status(Constant.SUCCESS_CODE).json({
+            code: Constant.SUCCESS_CODE,
+            data: null,
+            message: Constant.EMAIL_VERIFIED
+          });
+        } else {
+          return res.status(Constant.ERROR_CODE).json({
+            code: Constant.ERROR_CODE,
+            massage: Constant.USER_RESET_PASSWORD,
+            data: null
+          })
+        }
+      } else {
+        return res.status(Constant.ERROR_CODE).json({
+          code: Constant.ERROR_CODE,
+          data: data,
+          message: Constant.INVALID_TOKEN
+        });
+      }
+    }).catch(error => {
+      return res.status(Constant.SERVER_ERROR).json({
+        code: Constant.SERVER_ERROR,
+        massage: Constant.SOMETHING_WENT_WRONG,
+        data: null
+      })
+    })
+  } catch (error) {
+    return res.status(Constant.SERVER_ERROR).json({
+      code: Constant.SERVER_ERROR,
       massage: Constant.SOMETHING_WENT_WRONG,
       data: null
     })
@@ -284,26 +308,26 @@ account.resetPassword = async (req, res) => {
 
     user.findOne({
       where: {
-        verification_token: token
+        verificationToken: token
       }
     }).then((result) => {
       if (result && result.resetPasswordExpires >= Date.now()) {
         var hash = bcrypt.hashSync(password, salt);
         var UserData = {
           password: hash,
-          verification_token: '',
+          verificationToken: '',
           resetPasswordExpires: '',
         }
 
         result.update(UserData);
-        return res.json({
+        return res.status(Constant.ERROR_CODE).json({
           code: Constant.SUCCESS_CODE,
           'message': Constant.PASSWORD_RESET,
           data: result.email
         });
 
       } else {
-        return res.json({
+        return res.status(Constant.ERROR_CODE).json({
           code: Constant.ERROR_CODE,
           massage: Constant.USER_RESET_PASSWORD,
           data: null
@@ -312,15 +336,12 @@ account.resetPassword = async (req, res) => {
 
     })
   } catch (error) {
-    return res.json({
-      code: Constant.ERROR_CODE,
+    return res.status(Constant.SERVER_ERROR).json({
+      code: Constant.SERVER_ERROR,
       massage: Constant.USER_RESET_PASSWORD,
       data: null
     })
   }
-
-
-
 }
 
 account.changePassword = async (req, res) => {
@@ -340,14 +361,14 @@ account.changePassword = async (req, res) => {
         }
 
         result.update(UserData);
-        return res.json({
+        return res.status(Constant.SUCCESS_CODE).json({
           code: Constant.SUCCESS_CODE,
           massage: Constant.PASSWORD_RESET,
           data: null
         });
 
       } else {
-        return res.json({
+        return res.status(Constant.ERROR_CODE).json({
           code: Constant.ERROR_CODE,
           massage: Constant.USER_OLD_PASSWORD,
           data: null
@@ -356,8 +377,8 @@ account.changePassword = async (req, res) => {
 
     })
   } catch (error) {
-    return res.json({
-      code: Constant.ERROR_CODE,
+    return res.status(Constant.SERVER_ERROR).json({
+      code: Constant.SERVER_ERROR,
       massage: Constant.USER_RESET_PASSWORD,
       data: null
     })
@@ -376,10 +397,10 @@ account.getAllUsers = async function (req, res) {
     if (search) {
       condition = {
         [Op.or]: {
-          first_name: {
+          firstName: {
             [Op.like]: `%${search}%`
           },
-          last_name: {
+          lastName: {
             [Op.like]: `%${search}%`
           },
           email: {
@@ -393,11 +414,11 @@ account.getAllUsers = async function (req, res) {
     }
     let result = await user.findAll({
       where: condition,
-      attributes: ["id", "first_name", "last_name", "role", "email", "phone"]
+      attributes: ["id", "firstName", "lastName", "role", "email", "phone"]
     })
 
     let massage = (result.length > 0) ? Constant.CONSIGNEE_RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
-    return res.json({
+    return res.status(Constant.SUCCESS_CODE).json({
       code: Constant.SUCCESS_CODE,
       massage: massage,
       data: result
@@ -406,8 +427,8 @@ account.getAllUsers = async function (req, res) {
   }
   catch (err) {
 
-    return res.json({
-      code: Constant.ERROR_CODE,
+    return res.status(Constant.SERVER_ERROR).json({
+      code: Constant.SERVER_ERROR,
       massage: Constant.SOMETHING_WENT_WRONG,
       data: null
     })
@@ -423,11 +444,11 @@ account.getUserById = async (req, res) => {
       where: {
         id: userId
       },
-      attributes: ["id", "first_name", "last_name", "role", "email", "phone", "gendar"]
+      attributes: ["id", "firstName", "lastName", "role", "email", "phone", "gendar"]
     })
 
     let massage = (result.length > 0) ? Constant.USER_RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
-    return res.json({
+    return res.status(Constant.SUCCESS_CODE).json({
       code: Constant.SUCCESS_CODE,
       massage: massage,
       data: result
@@ -436,8 +457,8 @@ account.getUserById = async (req, res) => {
   }
   catch (err) {
 
-    return res.json({
-      code: Constant.ERROR_CODE,
+    return res.status(Constant.SERVER_ERROR).json({
+      code: Constant.SERVER_ERROR,
       massage: Constant.SOMETHING_WENT_WRONG,
       data: null
     })
@@ -449,8 +470,8 @@ account.getUserById = async (req, res) => {
 account.updateProfile = async (req, res) => {
   try {
     let { userId } = req.user;
-    let { image, gendar, last_name, phone, first_name, city, dob_date } = req.body;
-    let profile_img = "";
+    let { image, gendar, lastName, phone, firstName, city, dob_date } = req.body;
+    let profileImg = "";
     user.findOne({
       where: {
         id: userId
@@ -459,32 +480,32 @@ account.updateProfile = async (req, res) => {
       if (result) {
         let userData = {
           gendar: gendar,
-          last_name: last_name,
+          lastName: lastName,
           phone: phone,
-          first_name: first_name,
+          firstName: firstName,
           city: city,
           dob_date: dob_date
         }
         result.update(userData);
 
         if (image) {
-          profile_img = await utility.uploadBase64Image(image)
+          profileImg = await utility.uploadBase64Image(image)
 
           let userData = {
-            profile_img: profile_img
+            profileImg: profileImg
 
           }
           result.update(userData)
         }
 
-        return res.json({
+        return res.status(Constant.SUCCESS_CODE).json({
           code: Constant.SUCCESS_CODE,
           massage: Constant.USER_DATA_UPDATE_SUCCESS,
           data: result
         });
 
       } else {
-        return res.json({
+        return res.status(Constant.ERROR_CODE).json({
           code: Constant.ERROR_CODE,
           massage: Constant.USER_RESET_PASSWORD,
           data: null
@@ -493,8 +514,8 @@ account.updateProfile = async (req, res) => {
 
     })
   } catch (error) {
-    return res.json({
-      code: Constant.ERROR_CODE,
+    return res.status(Constant.SERVER_ERROR).json({
+      code: Constant.SERVER_ERROR,
       massage: Constant.USER_RESET_PASSWORD,
       data: null
     })

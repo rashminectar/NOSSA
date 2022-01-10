@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize');
-module.exports = function (sequelize, DataTypes) {
+module.exports = function(sequelize, DataTypes) {
   return sequelize.define('claim_details', {
     id: {
       autoIncrement: true,
@@ -44,27 +44,27 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: true
     },
     preHospitalExpense: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     hospitalExpense: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     postHospitalExpense: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     healthCheckupExpense: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     ambulanceExpense: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     otherExpense: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     preHospitalDuration: {
@@ -76,27 +76,27 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: true
     },
     hospitalDailyCash: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     surgicalCash: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     criticalIllnessbenefit: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     convalescence: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     lumpSumBenefit: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     otherCharges: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     lumpSumBenefitDetail: {
@@ -106,7 +106,7 @@ module.exports = function (sequelize, DataTypes) {
     status: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 1
     }
   }, {
     sequelize,

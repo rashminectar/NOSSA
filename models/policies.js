@@ -7,11 +7,11 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       primaryKey: true
     },
-    policy_name: {
+    policyName: {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    policy_code: {
+    policyCode: {
       type: DataTypes.STRING(255),
       allowNull: true
     },
@@ -19,18 +19,27 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    policy_type: {
+    policyType: {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    policy_duration: {
+    policyDuration: {
       type: DataTypes.DECIMAL(18,2),
       allowNull: true
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    activStatus: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: 1
     },
     status: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 1
     }
   }, {
     sequelize,

@@ -8,7 +8,7 @@ module.exports = {
     INACTIVATE: 406,
     NOT_FOUND: 404,
     CONFLICT: 409,
-    SERVER_ERROR: 501,
+    SERVER_ERROR: 500,
     REQUEST_NOT_FOUND: 'Request not found',
     EMAIL_ALREADY_REGISTERED: 'Email already registered.',
     INVAILID_DATA: 'Registration form data is not correct.',
@@ -29,4 +29,8 @@ module.exports = {
     USER_OLD_PASSWORD: 'User old password did not matched',
     PASSWORD_RESET: "Password reset successfully",
     DATA_DELETED_SUCCESS: 'Data deleted successfully',
+    SAVE_SUCCESS: 'Requested record created successfully',
+    UPDATED_SUCCESS: 'Requested record updated successfully',
+    DELETED_SUCCESS: 'Requested record deleted successfully',
+    RETRIEVE_SUCCESS: 'Record(s) retrieve successfully',
 }

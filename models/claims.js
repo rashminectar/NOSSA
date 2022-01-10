@@ -51,7 +51,7 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    policy_no: {
+    policyNo: {
       type: DataTypes.STRING(255),
       allowNull: true
     },
@@ -98,7 +98,7 @@ module.exports = function(sequelize, DataTypes) {
     status: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 1
     }
   }, {
     sequelize,

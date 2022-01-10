@@ -35,7 +35,7 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.DATE,
       allowNull: true
     },
-    priority_status: {
+    priorityStatus: {
       type: DataTypes.STRING(45),
       allowNull: true
     },
@@ -62,7 +62,7 @@ module.exports = function(sequelize, DataTypes) {
     status: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 1
     }
   }, {
     sequelize,

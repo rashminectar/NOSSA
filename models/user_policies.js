@@ -23,27 +23,35 @@ module.exports = function(sequelize, DataTypes) {
         key: 'id'
       }
     },
-    premium_plan: {
+    agent_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
+    },
+    premiumPlan: {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    premium_amount: {
+    premiumAmount: {
       type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
-    number_of_claims: {
+    numberOfClaims: {
       type: DataTypes.INTEGER,
       allowNull: true
     },
-    policy_startdate: {
+    policyStartDate: {
       type: DataTypes.DATE,
       allowNull: true
     },
-    policy_maturitydate: {
+    policyMaturityDate: {
       type: DataTypes.DATE,
       allowNull: true
     },
-    policy_status: {
+    policyStatus: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: 0
@@ -51,7 +59,7 @@ module.exports = function(sequelize, DataTypes) {
     status: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 1
     }
   }, {
     sequelize,
@@ -78,6 +86,13 @@ module.exports = function(sequelize, DataTypes) {
         using: "BTREE",
         fields: [
           { name: "user_id" },
+        ]
+      },
+      {
+        name: "fk_userPolicy_agent_idx",
+        using: "BTREE",
+        fields: [
+          { name: "agent_id" },
         ]
       },
     ]

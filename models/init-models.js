@@ -13,6 +13,7 @@ var _reimbursement_doctors = require("./reimbursement_doctors");
 var _reimbursement_service_master = require("./reimbursement_service_master");
 var _reimbursement_services = require("./reimbursement_services");
 var _service_request = require("./service_request");
+var _settings = require("./settings");
 var _user_info = require("./user_info");
 var _user_notification = require("./user_notification");
 var _user_policies = require("./user_policies");
@@ -33,6 +34,7 @@ function initModels(sequelize) {
   var reimbursement_service_master = _reimbursement_service_master(sequelize, DataTypes);
   var reimbursement_services = _reimbursement_services(sequelize, DataTypes);
   var service_request = _service_request(sequelize, DataTypes);
+  var settings = _settings(sequelize, DataTypes);
   var user_info = _user_info(sequelize, DataTypes);
   var user_notification = _user_notification(sequelize, DataTypes);
   var user_policies = _user_policies(sequelize, DataTypes);
@@ -70,8 +72,10 @@ function initModels(sequelize) {
   users.hasMany(service_request, { as: "service_requests", foreignKey: "user_id"});
   user_notification.belongsTo(users, { as: "user", foreignKey: "user_id"});
   users.hasMany(user_notification, { as: "user_notifications", foreignKey: "user_id"});
+  user_policies.belongsTo(users, { as: "agent", foreignKey: "agent_id"});
+  users.hasMany(user_policies, { as: "user_policies", foreignKey: "agent_id"});
   user_policies.belongsTo(users, { as: "user", foreignKey: "user_id"});
-  users.hasMany(user_policies, { as: "user_policies", foreignKey: "user_id"});
+  users.hasMany(user_policies, { as: "user_user_policies", foreignKey: "user_id"});
 
   return {
     claim_details,
@@ -88,6 +92,7 @@ function initModels(sequelize) {
     reimbursement_service_master,
     reimbursement_services,
     service_request,
+    settings,
     user_info,
     user_notification,
     user_policies,

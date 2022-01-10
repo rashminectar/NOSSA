@@ -1,38 +1,24 @@
 const Sequelize = require('sequelize');
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('notification_master', {
+  return sequelize.define('settings', {
     id: {
       autoIncrement: true,
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
     },
-    name: {
+    key: {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      allowNull: true,
-      defaultValue: 0
-    },
-    emailBody: {
-      type: DataTypes.TEXT,
+    value: {
+      type: DataTypes.STRING(255),
       allowNull: true
-    },
-    textBody: {
-      type: DataTypes.TEXT,
-      allowNull: true
-    },
-    status: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: 1
     }
   }, {
     sequelize,
-    tableName: 'notification_master',
-    timestamps: true,
+    tableName: 'settings',
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

@@ -9,7 +9,7 @@ const db = require("./models");
 const fileUpload = require('express-fileupload')
 const Constant = require('./config/constant');
 const path = require('path');
-db.sequelize.sync();
+// db.sequelize.sync();
 
 var httpServer;
 const app = express();
@@ -33,12 +33,12 @@ var dir = path.join(__dirname, '/public/images');
 
 app.use('/images', express.static(dir));
 
-// import route file 
-var account = require('./route/account')
+// import route file
 
 
 // user route file
-app.use('/admin', require('./route/account'));
+app.use('/account', require('./route/account'));
+app.use('/policy', require('./route/policy'));
 
 // Handling non matching request from the client
 app.use((req, res, next) => {

@@ -4,8 +4,8 @@ var validation = {};
 
 validation.checkUserData = async (data) => {
     const schema = Joi.object({
-        first_name: Joi.string().required(),
-        last_name: Joi.string().required(),
+        firstName: Joi.string().required(),
+        lastName: Joi.string().required(),
         password: Joi.string().pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')).required(),
         email: Joi.string().email().required()
     }).unknown();
@@ -22,7 +22,7 @@ validation.checkUserData = async (data) => {
 validation.userLogin = async (data) => {
     const schema = Joi.object({
         password: Joi.string().required(),
-        username: Joi.string().email().required()
+        userName: Joi.string().email().required()
     })
 
     try {
@@ -34,5 +34,21 @@ validation.userLogin = async (data) => {
     }
 }
 
+validation.policy = async (data) => {
+    const schema = Joi.object({
+        policyName: Joi.string().required(),
+        registration: Joi.string().required(),
+        policyType: Joi.string().required(),
+        description: Joi.string()
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
 
 module.exports = validation;
