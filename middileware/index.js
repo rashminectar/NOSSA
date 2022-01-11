@@ -11,6 +11,7 @@ middileware.checkAuthentication = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (error) {
+        return res.status(Constant.INVALID_CODE).json({
             code: Constant.INVALID_CODE,
             massage: Constant.INVALID_TOKEN,
             data: null
