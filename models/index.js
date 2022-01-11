@@ -1,19 +1,20 @@
 const dbConfig = require("../config/db.config");
-const fs = require('fs');
-const path = require('path');
-const { Sequelize } = require("sequelize");
+var Sequelize = require("sequelize");
+var initModels = require("./init-models").initModels;
 const Op = Sequelize.Op;
 const operatorsAliases = {
     $gt: Op.gt,
+    $in: Op.in,
     $or: Op.or,
     $and: Op.and,
     $like: Op.like
 }
+// create sequelize instance with database connection
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
     host: dbConfig.HOST,
     dialect: dbConfig.dialect,
     operatorsAliases,
-    logging: true,
+    // logging: true,
     pool: {
         max: dbConfig.pool.max,
         min: dbConfig.pool.min,
@@ -21,23 +22,7 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
         idle: dbConfig.pool.idle
     }
 });
+// load the model definitions into sequelize
+var models = initModels(sequelize);
 
-const db = {};
-
-fs.readdirSync(__dirname).filter(function (file) {
-    return (file.indexOf(".") !== 0) && (file !== "index.js");
-}).forEach(function (file) {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes)
-    db[model.name] = model;
-});
-
-Object.keys(db).forEach(function (modelName) {
-    if ("associate" in db[modelName]) {
-        db[modelName].associate(db);
-    }
-});
-
-db.Sequelize = Sequelize;
-db.sequelize = sequelize;
-
-module.exports = db;
+module.exports = models;

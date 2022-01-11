@@ -9,10 +9,8 @@ middileware.checkAuthentication = (req, res, next) => {
         const { authorization } = req.headers;
         const decoded = jwt.verify(authorization, SECRET);
         req.user = decoded;
-
         next();
     } catch (error) {
-        return res.json({
             code: Constant.INVALID_CODE,
             massage: Constant.INVALID_TOKEN,
             data: null

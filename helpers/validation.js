@@ -51,4 +51,39 @@ validation.policy = async (data) => {
     }
 }
 
+validation.userPolicy = async (data) => {
+    const schema = Joi.object({
+        policyName: Joi.string().required(),
+        registration: Joi.string().required(),
+        policyType: Joi.string().required(),
+        description: Joi.string()
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
+validation.agent = async (data) => {
+    const schema = Joi.object({
+        firstName: Joi.string().required(),
+        lastName: Joi.string().required(),
+        email: Joi.string().email().required(),
+        phone: Joi.string().required(),
+        city: Joi.string().required()
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
 module.exports = validation;

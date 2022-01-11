@@ -39,6 +39,7 @@ app.use('/images', express.static(dir));
 // user route file
 app.use('/account', require('./route/account'));
 app.use('/policy', require('./route/policy'));
+app.use('/agent', require('./route/agent'));
 
 // Handling non matching request from the client
 app.use((req, res, next) => {

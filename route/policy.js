@@ -9,4 +9,9 @@ router.put('/edit', middileware.checkAuthentication, policy.create);
 router.delete('/delete', middileware.checkAuthentication, policy.delete);
 router.get('/exportReport', policy.exportReport);
 
+router.get('/getAllUserPolicy', policy.getAllUserPolicy);
+// router.get('/addUserPolicy', policy.addUserPolicy);
+router.get('/exportUserPolicyReport', policy.exportUserPolicyReport);
+
+
 module.exports = router

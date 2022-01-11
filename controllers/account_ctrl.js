@@ -1,11 +1,10 @@
 'use strict'
-var jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const config = require('../config');
 const db = require("../models");
 const bcrypt = require('bcryptjs');
 const salt = bcrypt.genSaltSync(10);
 const user = db.users;
-const Op = db.Sequelize.Op;
 const utility = require('../helpers/utility')
 const validation = require('../helpers/validation')
 const Constant = require('../config/constant')
@@ -387,28 +386,30 @@ account.changePassword = async (req, res) => {
 
 account.getAllUsers = async function (req, res) {
   try {
-    let { search } = req.body;
+    let { search, role } = req.body;
     let condition = {
       status: true,
-      role: {
-        [Op.in]: [3, 5]
-      }
     };
+
+    if (role) {
+      condition['role'] = role;
+    } else {
+      condition['role'] = req.user.role == 3 ? 4 : 3;
+    }
+
     if (search) {
-      condition = {
-        [Op.or]: {
-          firstName: {
-            [Op.like]: `%${search}%`
-          },
-          lastName: {
-            [Op.like]: `%${search}%`
-          },
-          email: {
-            [Op.like]: `%${search}%`
-          },
-          phone: {
-            [Op.like]: `%${search}%`
-          }
+      condition['$or'] = {
+        firstName: {
+          $like: `%${search}%`
+        },
+        lastName: {
+          $like: `%${search}%`
+        },
+        email: {
+          $like: `%${search}%`
+        },
+        phone: {
+          $like: `%${search}%`
         }
       }
     }
@@ -440,11 +441,11 @@ account.getAllUsers = async function (req, res) {
 account.getUserById = async (req, res) => {
   try {
     let { userId } = req.body;
-    let result = await user.findAll({
+    let result = await user.findOne({
       where: {
         id: userId
       },
-      attributes: ["id", "firstName", "lastName", "role", "email", "phone", "gendar"]
+      attributes: ["id", "firstName", "lastName", "role", "email", "phone", "gendar", "dob"]
     })
 
     let massage = (result.length > 0) ? Constant.USER_RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
@@ -453,7 +454,6 @@ account.getUserById = async (req, res) => {
       massage: massage,
       data: result
     })
-
   }
   catch (err) {
 

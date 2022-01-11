@@ -47,6 +47,25 @@ utility.generatePolicyCode = () => {
     })
 }
 
+utility.generateAgentCode = () => {
+    return new Promise((resolve, reject) => {
+        let lastID = 0;
+        settings.findOne({
+            where: {
+                key: 'lastAgentId'
+            }
+        }).then(result => {
+            result = JSON.parse(JSON.stringify(result));
+            lastID = ((result && result.value) ? parseInt(result.value) : lastID) + 1;
+            let str = "NA" + (lastID).toString().padStart(6, '0');
+            settings.update({ value: lastID }, { where: { key: 'lastAgentId' } })
+            resolve(str);
+        }).catch(error => {
+            reject(error);
+        })
+    })
+}
+
 utility.fileupload = (files) => {
     return new Promise(async (resolve, reject) => {
         let name = await utility.randomString(5);
