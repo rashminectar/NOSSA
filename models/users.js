@@ -41,6 +41,14 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(255),
       allowNull: true
     },
+    dob: {
+      type: DataTypes.DATE(6),
+      allowNull: true
+    },
+    profileImg: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
     verificationToken: {
       type: DataTypes.STRING(255),
       allowNull: true
@@ -49,9 +57,22 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    profileImg: {
+    currentAddress: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    permanentAddress: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    city: {
       type: DataTypes.STRING(255),
       allowNull: true
+    },
+    activeStatus: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: 1
     },
     status: {
       type: DataTypes.BOOLEAN,

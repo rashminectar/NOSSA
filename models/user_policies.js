@@ -39,6 +39,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
+    premiumStatus: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
     numberOfClaims: {
       type: DataTypes.INTEGER,
       allowNull: true
