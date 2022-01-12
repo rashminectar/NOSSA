@@ -137,12 +137,11 @@ policies.delete = async (req, res) => {
             data: error
         })
     }
-
 }
 
 policies.getAllPolicy = async (req, res) => {
     try {
-        let { id, search, policyType } = req.body;
+        let { id, search, policyType, activStatus } = req.query;
         let condition = {
             status: true
         }
@@ -347,7 +346,7 @@ policies.exportReport = async (req, res) => {
 
 policies.getAllUserPolicy = async (req, res) => {
     try {
-        let { search, policy_id, user_id, agent_id, premiumPlan } = req.body;
+        let { search, policy_id, user_id, agent_id, premiumPlan } = req.query;
 
         let condition = {
             status: true

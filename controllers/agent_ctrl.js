@@ -142,7 +142,7 @@ agent.delete = async (req, res) => {
 
 agent.getAllAgent = async (req, res) => {
     try {
-        let { id, search } = req.body;
+        let { id, search } = req.query;
         let condition = {
             status: true,
             role: 3

@@ -386,7 +386,7 @@ account.changePassword = async (req, res) => {
 
 account.getAllUsers = async function (req, res) {
   try {
-    let { search, role } = req.body;
+    let { search, role } = req.query;
     let condition = {
       status: true,
     };

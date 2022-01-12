@@ -13,5 +13,4 @@ router.get('/getAllUserPolicy', policy.getAllUserPolicy);
 // router.get('/addUserPolicy', policy.addUserPolicy);
 router.get('/exportUserPolicyReport', policy.exportUserPolicyReport);
 
-
 module.exports = router
