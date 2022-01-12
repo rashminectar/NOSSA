@@ -9,7 +9,7 @@ const db = require("./models");
 const fileUpload = require('express-fileupload')
 const Constant = require('./config/constant');
 const path = require('path');
-// db.sequelize.sync();
+db.sequelize.sync();
 
 var httpServer;
 const app = express();
