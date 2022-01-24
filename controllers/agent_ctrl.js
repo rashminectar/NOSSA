@@ -1,13 +1,13 @@
 'use strict'
 const validation = require('../helpers/validation')
 const utility = require('../helpers/utility')
+const mail = require('../helpers/mail')
 const db = require("../models");
 const bcrypt = require('bcryptjs');
 var Sequelize = require("sequelize");
 const salt = bcrypt.genSaltSync(10);
 const users = db.users;
 const Constant = require('../config/constant')
-const mailer = require('../lib/mailer');
 const userPolicy = db.user_policies;
 let agent = {};
 
@@ -37,21 +37,21 @@ agent.create = async (req, res) => {
                     result.update(agentData)
                     return res.status(Constant.SUCCESS_CODE).json({
                         code: Constant.SUCCESS_CODE,
-                        massage: Constant.UPDATED_SUCCESS,
+                        message: Constant.UPDATED_SUCCESS,
                         data: result
                     })
 
                 } else {
                     return res.status(Constant.ERROR_CODE).json({
                         code: Constant.ERROR_CODE,
-                        massage: Constant.SOMETHING_WENT_WRONG,
+                        message: Constant.SOMETHING_WENT_WRONG,
                         data: result
                     })
                 }
             }).catch(error => {
                 return res.status(Constant.SERVER_ERROR).json({
                     code: Constant.SERVER_ERROR,
-                    massage: Constant.SOMETHING_WENT_WRONG,
+                    message: Constant.SOMETHING_WENT_WRONG,
                     data: error
                 })
             })
@@ -61,23 +61,32 @@ agent.create = async (req, res) => {
             if (agentData.message) {
                 return res.status(Constant.ERROR_CODE).json({
                     code: Constant.ERROR_CODE,
-                    massage: Constant.INVAILID_DATA,
+                    message: Constant.INVAILID_DATA,
                     data: agentData.message
                 })
             } else {
                 agentData.role = 3;
-                agentData.userName = await utility.generateAgentCode();
+                agentData.userName = await utility.generateCode('NA', 'agentId', 6);
+                let password = utility.randomString(6);
+                agentData.password = bcrypt.hashSync(password, salt);
+
+                let objMail = {
+                    userName: agentData.userName,
+                    password: password,
+                    email: agentData.email,
+                }
                 let result = await users.create(agentData);
                 if (result) {
+                    await mail.sendWelcomeMail(objMail);
                     return res.status(Constant.SUCCESS_CODE).json({
                         code: Constant.SUCCESS_CODE,
-                        massage: Constant.SAVE_SUCCESS,
+                        message: Constant.SAVE_SUCCESS,
                         data: result
                     })
                 } else {
                     return res.status(Constant.ERROR_CODE).json({
                         code: Constant.ERROR_CODE,
-                        massage: Constant.SOMETHING_WENT_WRONG,
+                        message: Constant.SOMETHING_WENT_WRONG,
                         data: result
                     })
                 }
@@ -87,7 +96,7 @@ agent.create = async (req, res) => {
         console.log(error)
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
-            massage: Constant.SOMETHING_WENT_WRONG,
+            message: Constant.SOMETHING_WENT_WRONG,
             data: error
         })
     }
@@ -110,14 +119,14 @@ agent.delete = async (req, res) => {
 
                 return res.status(Constant.SUCCESS_CODE).json({
                     code: Constant.SUCCESS_CODE,
-                    massage: Constant.DELETED_SUCCESS,
+                    message: Constant.DELETED_SUCCESS,
                     data: result
                 })
 
             } else {
                 return res.status(Constant.ERROR_CODE).json({
                     code: Constant.ERROR_CODE,
-                    massage: Constant.SOMETHING_WENT_WRONG,
+                    message: Constant.SOMETHING_WENT_WRONG,
                     data: result
                 })
             }
@@ -125,7 +134,7 @@ agent.delete = async (req, res) => {
         }).catch(error => {
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
-                massage: Constant.SOMETHING_WENT_WRONG,
+                message: Constant.SOMETHING_WENT_WRONG,
                 data: error
             })
         })
@@ -133,7 +142,7 @@ agent.delete = async (req, res) => {
     } catch (error) {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
-            massage: Constant.SOMETHING_WENT_WRONG,
+            message: Constant.SOMETHING_WENT_WRONG,
             data: error
         })
     }
@@ -184,17 +193,17 @@ agent.getAllAgent = async (req, res) => {
                 obj.totalResolvedComplaint = 0;
                 return obj;
             })
-            let massage = (result.length > 0) ? Constant.RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
+            let message = (result.length > 0) ? Constant.RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
             return res.status(Constant.SUCCESS_CODE).json({
                 code: Constant.SUCCESS_CODE,
-                massage: massage,
+                message: message,
                 data: result
             })
         }).catch(error => {
             console.log("11 ", error)
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
-                massage: Constant.SOMETHING_WENT_WRONG,
+                message: Constant.SOMETHING_WENT_WRONG,
                 data: error
             })
         })
@@ -203,7 +212,7 @@ agent.getAllAgent = async (req, res) => {
 
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
-            massage: Constant.SOMETHING_WENT_WRONG,
+            message: Constant.SOMETHING_WENT_WRONG,
             data: error
         })
     }
@@ -342,7 +351,7 @@ agent.exportReport = async (req, res) => {
     } else {
         return res.status(Constant.ERROR_CODE).json({
             code: Constant.ERROR_CODE,
-            massage: Constant.SOMETHING_WENT_WRONG,
+            message: Constant.SOMETHING_WENT_WRONG,
             data: {}
         });
     }

@@ -9,7 +9,11 @@ module.exports = function(sequelize, DataTypes) {
     },
     claim_id: {
       type: DataTypes.INTEGER,
-      allowNull: true
+      allowNull: true,
+      references: {
+        model: 'claims',
+        key: 'id'
+      }
     },
     documentName: {
       type: DataTypes.STRING(255),
@@ -35,6 +39,13 @@ module.exports = function(sequelize, DataTypes) {
         using: "BTREE",
         fields: [
           { name: "id" },
+        ]
+      },
+      {
+        name: "fk_claimDocuments_claim_idx",
+        using: "BTREE",
+        fields: [
+          { name: "claim_id" },
         ]
       },
     ]

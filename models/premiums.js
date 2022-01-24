@@ -7,19 +7,11 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       primaryKey: true
     },
-    policy_id: {
+    userPolicy_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'policies',
-        key: 'id'
-      }
-    },
-    user_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'users',
+        model: 'user_policies',
         key: 'id'
       }
     },
@@ -41,6 +33,10 @@ module.exports = function(sequelize, DataTypes) {
     },
     paymentDate: {
       type: DataTypes.DATE,
+      allowNull: true
+    },
+    invoiceNumber: {
+      type: DataTypes.STRING(255),
       allowNull: true
     },
     invoice: {
@@ -66,17 +62,10 @@ module.exports = function(sequelize, DataTypes) {
         ]
       },
       {
-        name: "fk_premiums_user_idx",
-        using: "BTREE",
-        fields: [
-          { name: "user_id" },
-        ]
-      },
-      {
         name: "fk_premiums_policy_idx",
         using: "BTREE",
         fields: [
-          { name: "policy_id" },
+          { name: "userPolicy_id" },
         ]
       },
     ]

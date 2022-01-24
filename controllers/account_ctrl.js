@@ -18,7 +18,7 @@ account.userRegistration = async (req, res) => {
     if (userData.message) {
       return res.status(Constant.ERROR_CODE).json({
         code: Constant.ERROR_CODE,
-        massage: Constant.INVAILID_DATA,
+        message: Constant.INVAILID_DATA,
         data: userData.message
       })
     } else {
@@ -32,7 +32,7 @@ account.userRegistration = async (req, res) => {
 
         return res.status(Constant.FORBIDDEN_CODE).json({
           code: Constant.FORBIDDEN_CODE,
-          massage: Constant.EMAIL_ALREADY_REGISTERED,
+          message: Constant.EMAIL_ALREADY_REGISTERED,
           data: null
         })
       } else {
@@ -50,10 +50,10 @@ account.userRegistration = async (req, res) => {
           text: 'Email verification link',
           html: '<h1>Email verification link<h1>: http://localhost:3001/account/emailVerification/' + userData.verificationToken
         }
-        await mailer.sendEmail(mailOptions)
+        await mailer.sendEmail(mailOptions);
         return res.status(Constant.SUCCESS_CODE).json({
           code: Constant.SUCCESS_CODE,
-          massage: Constant.USER_SAVE_SUCCESS,
+          message: Constant.USER_SAVE_SUCCESS,
           data: result
         })
       }
@@ -61,7 +61,7 @@ account.userRegistration = async (req, res) => {
   } catch (err) {
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
-      massage: Constant.SOMETHING_WENT_WRONG,
+      message: Constant.SOMETHING_WENT_WRONG,
       data: null
     })
   }
@@ -79,20 +79,24 @@ account.userLogin = async (req, res) => {
     if (data.message) {
       return res.status(Constant.ERROR_CODE).json({
         code: Constant.ERROR_CODE,
-        massage: Constant.INVAILID_DATA,
+        message: Constant.INVAILID_DATA,
         data: data.message
       })
     } else {
       let result = await user.findOne({
         where: {
-          email: userName
+          '$or': {
+            userName: userName,
+            email: userName
+          }
         }
       })
-      if (bcrypt.compareSync(password, result.password)) {
+      if (result && bcrypt.compareSync(password, result.password)) {
         let params = {
           userId: result.id,
           firstName: result.firstName,
           lastName: result.lastName,
+          userName: result.userName,
           email: result.email,
           gendar: result.gendar,
           role: result.role,
@@ -102,22 +106,23 @@ account.userLogin = async (req, res) => {
         params.jwtToken = jwt.sign(params, process.env.SECRET);
         return res.status(Constant.SUCCESS_CODE).json({
           code: Constant.SUCCESS_CODE,
-          massage: Constant.USER_LOGIN_SUCCESS,
+          message: Constant.USER_LOGIN_SUCCESS,
           data: params
         })
       } else {
         return res.status(Constant.FORBIDDEN_CODE).json({
           code: Constant.FORBIDDEN_CODE,
-          massage: Constant.USER_EMAIL_PASSWORD,
+          message: Constant.USER_EMAIL_PASSWORD,
           data: null
         })
       }
     }
   } catch (error) {
+    console.log("error ", error)
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
-      massage: Constant.SOMETHING_WENT_WRONG,
-      data: null
+      message: Constant.SOMETHING_WENT_WRONG,
+      data: error.message
     })
   }
 }
@@ -151,13 +156,13 @@ account.getUserByToken = async (req, res) => {
 
     return res.status(Constant.SUCCESS_CODE).json({
       code: Constant.SUCCESS_CODE,
-      massage: Constant.USER_VERIFICATION_SUCCESS,
+      message: Constant.USER_VERIFICATION_SUCCESS,
       data: result
     })
   } catch (error) {
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
-      massage: Constant.INVALID_TOKEN,
+      message: Constant.INVALID_TOKEN,
       data: null
     })
   }
@@ -188,14 +193,14 @@ account.emailVerification = async (req, res) => {
     }).catch(error => {
       return res.status(Constant.SERVER_ERROR).json({
         code: Constant.SERVER_ERROR,
-        massage: Constant.SOMETHING_WENT_WRONG,
+        message: Constant.SOMETHING_WENT_WRONG,
         data: null
       })
     })
   } catch (error) {
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
-      massage: Constant.SOMETHING_WENT_WRONG,
+      message: Constant.SOMETHING_WENT_WRONG,
       data: null
     })
   }
@@ -250,7 +255,7 @@ account.forgotPassword = async (req, res) => {
   } catch (error) {
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
-      massage: Constant.SOMETHING_WENT_WRONG,
+      message: Constant.SOMETHING_WENT_WRONG,
       data: null
     })
   }
@@ -274,7 +279,7 @@ account.resetPasswordVerification = async (req, res) => {
         } else {
           return res.status(Constant.ERROR_CODE).json({
             code: Constant.ERROR_CODE,
-            massage: Constant.USER_RESET_PASSWORD,
+            message: Constant.USER_RESET_PASSWORD,
             data: null
           })
         }
@@ -288,14 +293,14 @@ account.resetPasswordVerification = async (req, res) => {
     }).catch(error => {
       return res.status(Constant.SERVER_ERROR).json({
         code: Constant.SERVER_ERROR,
-        massage: Constant.SOMETHING_WENT_WRONG,
+        message: Constant.SOMETHING_WENT_WRONG,
         data: null
       })
     })
   } catch (error) {
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
-      massage: Constant.SOMETHING_WENT_WRONG,
+      message: Constant.SOMETHING_WENT_WRONG,
       data: null
     })
   }
@@ -328,7 +333,7 @@ account.resetPassword = async (req, res) => {
       } else {
         return res.status(Constant.ERROR_CODE).json({
           code: Constant.ERROR_CODE,
-          massage: Constant.USER_RESET_PASSWORD,
+          message: Constant.USER_RESET_PASSWORD,
           data: null
         })
       }
@@ -337,7 +342,7 @@ account.resetPassword = async (req, res) => {
   } catch (error) {
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
-      massage: Constant.USER_RESET_PASSWORD,
+      message: Constant.USER_RESET_PASSWORD,
       data: null
     })
   }
@@ -362,14 +367,14 @@ account.changePassword = async (req, res) => {
         result.update(UserData);
         return res.status(Constant.SUCCESS_CODE).json({
           code: Constant.SUCCESS_CODE,
-          massage: Constant.PASSWORD_RESET,
+          message: Constant.PASSWORD_RESET,
           data: null
         });
 
       } else {
         return res.status(Constant.ERROR_CODE).json({
           code: Constant.ERROR_CODE,
-          massage: Constant.USER_OLD_PASSWORD,
+          message: Constant.USER_OLD_PASSWORD,
           data: null
         })
       }
@@ -378,7 +383,7 @@ account.changePassword = async (req, res) => {
   } catch (error) {
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
-      massage: Constant.USER_RESET_PASSWORD,
+      message: Constant.USER_RESET_PASSWORD,
       data: null
     })
   }
@@ -418,10 +423,10 @@ account.getAllUsers = async function (req, res) {
       attributes: ["id", "firstName", "lastName", "role", "email", "phone"]
     })
 
-    let massage = (result.length > 0) ? Constant.CONSIGNEE_RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
+    let message = (result.length > 0) ? Constant.CONSIGNEE_RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
     return res.status(Constant.SUCCESS_CODE).json({
       code: Constant.SUCCESS_CODE,
-      massage: massage,
+      message: message,
       data: result
     })
 
@@ -430,7 +435,7 @@ account.getAllUsers = async function (req, res) {
 
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
-      massage: Constant.SOMETHING_WENT_WRONG,
+      message: Constant.SOMETHING_WENT_WRONG,
       data: null
     })
 
@@ -448,10 +453,10 @@ account.getUserById = async (req, res) => {
       attributes: ["id", "firstName", "lastName", "role", "email", "phone", "gendar", "dob"]
     })
 
-    let massage = (result.length > 0) ? Constant.USER_RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
+    let message = (result.length > 0) ? Constant.USER_RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
     return res.status(Constant.SUCCESS_CODE).json({
       code: Constant.SUCCESS_CODE,
-      massage: massage,
+      message: message,
       data: result
     })
   }
@@ -459,7 +464,7 @@ account.getUserById = async (req, res) => {
 
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
-      massage: Constant.SOMETHING_WENT_WRONG,
+      message: Constant.SOMETHING_WENT_WRONG,
       data: null
     })
 
@@ -500,14 +505,14 @@ account.updateProfile = async (req, res) => {
 
         return res.status(Constant.SUCCESS_CODE).json({
           code: Constant.SUCCESS_CODE,
-          massage: Constant.USER_DATA_UPDATE_SUCCESS,
+          message: Constant.USER_DATA_UPDATE_SUCCESS,
           data: result
         });
 
       } else {
         return res.status(Constant.ERROR_CODE).json({
           code: Constant.ERROR_CODE,
-          massage: Constant.USER_RESET_PASSWORD,
+          message: Constant.USER_RESET_PASSWORD,
           data: null
         })
       }
@@ -516,7 +521,7 @@ account.updateProfile = async (req, res) => {
   } catch (error) {
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
-      massage: Constant.USER_RESET_PASSWORD,
+      message: Constant.USER_RESET_PASSWORD,
       data: null
     })
   }

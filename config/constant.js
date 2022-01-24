@@ -33,4 +33,6 @@ module.exports = {
     UPDATED_SUCCESS: 'Requested record updated successfully',
     DELETED_SUCCESS: 'Requested record deleted successfully',
     RETRIEVE_SUCCESS: 'Record(s) retrieve successfully',
+    VERIFIED_SUCCESS: 'Request successfully verified.',
+
 }

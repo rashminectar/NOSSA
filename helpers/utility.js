@@ -28,18 +28,18 @@ utility.generateToken = (length) => {
 
 }
 
-utility.generatePolicyCode = () => {
+utility.generateCode = (prefix, type, length) => {
     return new Promise((resolve, reject) => {
         let lastID = 0;
         settings.findOne({
             where: {
-                key: 'lastPolicyId'
+                key: type
             }
         }).then(result => {
             result = JSON.parse(JSON.stringify(result));
             lastID = ((result && result.value) ? parseInt(result.value) : lastID) + 1;
-            let str = "NS" + (lastID).toString().padStart(10, '0');
-            settings.update({ value: lastID }, { where: { key: 'lastPolicyId' } })
+            let str = prefix + (lastID).toString().padStart(length, '0');
+            settings.update({ value: lastID }, { where: { key: type } })
             resolve(str);
         }).catch(error => {
             reject(error);
@@ -47,41 +47,30 @@ utility.generatePolicyCode = () => {
     })
 }
 
-utility.generateAgentCode = () => {
-    return new Promise((resolve, reject) => {
-        let lastID = 0;
-        settings.findOne({
-            where: {
-                key: 'lastAgentId'
-            }
-        }).then(result => {
-            result = JSON.parse(JSON.stringify(result));
-            lastID = ((result && result.value) ? parseInt(result.value) : lastID) + 1;
-            let str = "NA" + (lastID).toString().padStart(6, '0');
-            settings.update({ value: lastID }, { where: { key: 'lastAgentId' } })
-            resolve(str);
-        }).catch(error => {
-            reject(error);
-        })
-    })
-}
-
-utility.fileupload = (files) => {
+utility.fileupload = (claim_id, files) => {
     return new Promise(async (resolve, reject) => {
-        let name = await utility.randomString(5);
+        let listKeys = Object.keys(files);
+        let listFiles = [];
         var currentPath = process.cwd();
         var file_path = path.join(currentPath, '/public/images');
-
-        var filedata = files.image.mv(file_path + '/' + name + files.image.name, (error, data) => {
-            if (error) {
-                reject(null);
+        StoreImages(0);
+        async function StoreImages(i) {
+            if (i < listKeys.length) {
+                let name = await utility.randomString(5);
+                var filedata = files[listKeys[i]].mv(file_path + '/' + name + files[listKeys[i]].name, (error, data) => {
+                    if (error) {
+                        reject(null);
+                    } else {
+                        listFiles.push({ claim_id: claim_id, documentName: listKeys[i], documentFile: name + files[listKeys[i]].name });
+                        StoreImages(i + 1);
+                    }
+                })
             } else {
-                resolve(name + files.image.name);
+                console.log("listFiles ", listFiles)
+                resolve(listFiles);
             }
-        })
-
+        }
     })
-
 }
 
 utility.uploadBase64Image = (imgBase64) => {

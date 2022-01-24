@@ -23,6 +23,9 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
     }
 });
 // load the model definitions into sequelize
+
 var models = initModels(sequelize);
+models.sequelize = sequelize;
+models.Sequelize = Sequelize;
 
 module.exports = models;

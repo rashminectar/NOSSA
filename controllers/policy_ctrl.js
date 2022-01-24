@@ -15,7 +15,7 @@ let policies = {};
 
 policies.create = async (req, res) => {
     try {
-        let { id, policyName, policyCode, registration, policyType, policyDuration, description, activStatus } = req.body;
+        let { id, policyName, policyCode, registration, policyType, policyDuration, description, activeStatus } = req.body;
 
         if (id != null && id != undefined && id != "") {
             let policyData = {
@@ -24,7 +24,7 @@ policies.create = async (req, res) => {
                 registration: registration,
                 policyType: policyType,
                 policyDuration: policyDuration,
-                activStatus: activStatus,
+                activeStatus: activeStatus,
                 description: description
             }
             policy.findOne({
@@ -36,21 +36,21 @@ policies.create = async (req, res) => {
                     result.update(policyData)
                     return res.status(Constant.SUCCESS_CODE).json({
                         code: Constant.SUCCESS_CODE,
-                        massage: Constant.UPDATED_SUCCESS,
+                        message: Constant.UPDATED_SUCCESS,
                         data: result
                     })
 
                 } else {
                     return res.status(Constant.ERROR_CODE).json({
                         code: Constant.ERROR_CODE,
-                        massage: Constant.SOMETHING_WENT_WRONG,
+                        message: Constant.SOMETHING_WENT_WRONG,
                         data: result
                     })
                 }
             }).catch(error => {
                 return res.status(Constant.SERVER_ERROR).json({
                     code: Constant.SERVER_ERROR,
-                    massage: Constant.SOMETHING_WENT_WRONG,
+                    message: Constant.SOMETHING_WENT_WRONG,
                     data: error
                 })
             })
@@ -60,23 +60,23 @@ policies.create = async (req, res) => {
             if (policyData.message) {
                 return res.status(Constant.ERROR_CODE).json({
                     code: Constant.ERROR_CODE,
-                    massage: Constant.INVAILID_DATA,
+                    message: Constant.INVAILID_DATA,
                     data: policyData.message
                 })
             } else {
-                policyData.policyCode = await utility.generatePolicyCode();
+                policyData.policyCode = await utility.generateCode('NS', 'policyId', 6);
                 let result = await policy.create(policyData);
                 if (result) {
                     return res.status(Constant.SUCCESS_CODE).json({
                         code: Constant.SUCCESS_CODE,
-                        massage: Constant.SAVE_SUCCESS,
+                        message: Constant.SAVE_SUCCESS,
                         data: result
                     })
                 } else {
                     console.log(result);
                     return res.status(Constant.ERROR_CODE).json({
                         code: Constant.ERROR_CODE,
-                        massage: Constant.SOMETHING_WENT_WRONG,
+                        message: Constant.SOMETHING_WENT_WRONG,
                         data: result
                     })
                 }
@@ -87,7 +87,7 @@ policies.create = async (req, res) => {
         console.log(error)
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
-            massage: Constant.SOMETHING_WENT_WRONG,
+            message: Constant.SOMETHING_WENT_WRONG,
             data: error
         })
     }
@@ -110,14 +110,14 @@ policies.delete = async (req, res) => {
 
                 return res.status(Constant.SUCCESS_CODE).json({
                     code: Constant.SUCCESS_CODE,
-                    massage: Constant.DELETED_SUCCESS,
+                    message: Constant.DELETED_SUCCESS,
                     data: result
                 })
 
             } else {
                 return res.status(Constant.ERROR_CODE).json({
                     code: Constant.ERROR_CODE,
-                    massage: Constant.SOMETHING_WENT_WRONG,
+                    message: Constant.SOMETHING_WENT_WRONG,
                     data: result
                 })
             }
@@ -125,7 +125,7 @@ policies.delete = async (req, res) => {
         }).catch(error => {
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
-                massage: Constant.SOMETHING_WENT_WRONG,
+                message: Constant.SOMETHING_WENT_WRONG,
                 data: error
             })
         })
@@ -133,7 +133,7 @@ policies.delete = async (req, res) => {
     } catch (error) {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
-            massage: Constant.SOMETHING_WENT_WRONG,
+            message: Constant.SOMETHING_WENT_WRONG,
             data: error
         })
     }
@@ -141,7 +141,7 @@ policies.delete = async (req, res) => {
 
 policies.getAllPolicy = async (req, res) => {
     try {
-        let { id, search, policyType, activStatus } = req.query;
+        let { id, search, policyType, activeStatus } = req.query;
         let condition = {
             status: true
         }
@@ -149,6 +149,11 @@ policies.getAllPolicy = async (req, res) => {
         if (policyType) {
             condition['policyType'] = policyType;
         }
+
+        if (activeStatus) {
+            condition['activeStatus'] = activeStatus;
+        }
+
 
         if (id) {
             condition['id'] = id;
@@ -181,17 +186,17 @@ policies.getAllPolicy = async (req, res) => {
             result.map((obj) => {
                 return obj.policyCount = 0;
             })
-            let massage = (result.length > 0) ? Constant.RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
+            let message = (result.length > 0) ? Constant.RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
             return res.status(Constant.SUCCESS_CODE).json({
                 code: Constant.SUCCESS_CODE,
-                massage: massage,
+                message: message,
                 data: result
             })
         }).catch(error => {
             console.log("11 ", error)
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
-                massage: Constant.SOMETHING_WENT_WRONG,
+                message: Constant.SOMETHING_WENT_WRONG,
                 data: error
             })
         })
@@ -200,7 +205,7 @@ policies.getAllPolicy = async (req, res) => {
 
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
-            massage: Constant.SOMETHING_WENT_WRONG,
+            message: Constant.SOMETHING_WENT_WRONG,
             data: error
         })
     }
@@ -338,7 +343,7 @@ policies.exportReport = async (req, res) => {
     } else {
         return res.status(Constant.ERROR_CODE).json({
             code: Constant.ERROR_CODE,
-            massage: "downloadType is Required.",
+            message: "downloadType is Required.",
             data: {}
         });
     }
@@ -415,17 +420,17 @@ policies.getAllUserPolicy = async (req, res) => {
             }]
         }).then(result => {
 
-            let massage = (result.length > 0) ? Constant.RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
-            return res.status(Constant.SERVER_ERROR).json({
+            let message = (result.length > 0) ? Constant.RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
+            return res.status(Constant.SUCCESS_CODE).json({
                 code: Constant.SUCCESS_CODE,
-                massage: massage,
+                message: message,
                 data: result
             })
         }).catch(error => {
             console.log("error 11 ", error)
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
-                massage: Constant.SOMETHING_WENT_WRONG,
+                message: Constant.SOMETHING_WENT_WRONG,
                 data: error
             })
         })
@@ -434,7 +439,7 @@ policies.getAllUserPolicy = async (req, res) => {
 
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
-            massage: Constant.SOMETHING_WENT_WRONG,
+            message: Constant.SOMETHING_WENT_WRONG,
             data: error
         })
     }
@@ -455,38 +460,37 @@ policies.createUserPolicy = async (req, res) => {
                     result.update(policyData)
                     return res.status(Constant.SUCCESS_CODE).json({
                         code: Constant.SUCCESS_CODE,
-                        massage: Constant.UPDATED_SUCCESS,
+                        message: Constant.UPDATED_SUCCESS,
                         data: result
                     })
 
                 } else {
                     return res.status(Constant.ERROR_CODE).json({
                         code: Constant.ERROR_CODE,
-                        massage: Constant.SOMETHING_WENT_WRONG,
+                        message: Constant.SOMETHING_WENT_WRONG,
                         data: result
                     })
                 }
             }).catch(error => {
                 return res.status(Constant.SERVER_ERROR).json({
                     code: Constant.SERVER_ERROR,
-                    massage: Constant.SOMETHING_WENT_WRONG,
+                    message: Constant.SOMETHING_WENT_WRONG,
                     data: error
                 })
             })
         } else {
-            policyData.policyCode = await utility.generatePolicyCode();
             let result = await policy.create(policyData);
             if (result) {
                 return res.status(Constant.SUCCESS_CODE).json({
                     code: Constant.SUCCESS_CODE,
-                    massage: Constant.SAVE_SUCCESS,
+                    message: Constant.SAVE_SUCCESS,
                     data: result
                 })
             } else {
                 console.log(result);
                 return res.status(Constant.ERROR_CODE).json({
                     code: Constant.ERROR_CODE,
-                    massage: Constant.SOMETHING_WENT_WRONG,
+                    message: Constant.SOMETHING_WENT_WRONG,
                     data: result
                 })
             }
@@ -496,7 +500,7 @@ policies.createUserPolicy = async (req, res) => {
         console.log(error)
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
-            massage: Constant.SOMETHING_WENT_WRONG,
+            message: Constant.SOMETHING_WENT_WRONG,
             data: error
         })
     }
@@ -695,7 +699,7 @@ policies.exportUserPolicyReport = async (req, res) => {
     } else {
         return res.status(Constant.ERROR_CODE).json({
             code: Constant.ERROR_CODE,
-            massage: "downloadType is Required.",
+            message: "downloadType is Required.",
             data: {}
         });
     }

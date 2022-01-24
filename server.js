@@ -9,7 +9,7 @@ const db = require("./models");
 const fileUpload = require('express-fileupload')
 const Constant = require('./config/constant');
 const path = require('path');
-db.sequelize.sync();
+// db.sequelize.sync();
 
 var httpServer;
 const app = express();
@@ -40,13 +40,17 @@ app.use('/images', express.static(dir));
 app.use('/account', require('./route/account'));
 app.use('/policy', require('./route/policy'));
 app.use('/agent', require('./route/agent'));
+app.use('/premium', require('./route/premium'));
+app.use('/claim', require('./route/claim'));
+app.use('/complaint', require('./route/complaint'));
+app.use('/client', require('./route/client'));
 
 // Handling non matching request from the client
 app.use((req, res, next) => {
-    return res.json({
+    return res.status(Constant.NOT_FOUND).json({
         code: Constant.NOT_FOUND,
-        massage: Constant.REQUEST_NOT_FOUND,
-        data: null
+        message: Constant.REQUEST_NOT_FOUND,
+        data: res
     })
 })
 

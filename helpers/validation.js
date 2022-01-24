@@ -22,7 +22,7 @@ validation.checkUserData = async (data) => {
 validation.userLogin = async (data) => {
     const schema = Joi.object({
         password: Joi.string().required(),
-        userName: Joi.string().email().required()
+        userName: Joi.string().required()
     })
 
     try {
@@ -40,6 +40,41 @@ validation.policy = async (data) => {
         registration: Joi.string().required(),
         policyType: Joi.string().required(),
         description: Joi.string()
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
+validation.claim = async (data) => {
+    const schema = Joi.object({
+        userPolicy_id: Joi.number().required(),
+        name: Joi.string().required(),
+        phone: Joi.string().required(),
+        email: Joi.string().required(),
+        address: Joi.string().required()
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
+validation.complaint = async (data) => {
+    const schema = Joi.object({
+        userPolicy_id: Joi.number().required(),
+        subject: Joi.string().required(),
+        description: Joi.string().required(),
+        complaintDate: Joi.required()
     }).unknown();
 
     try {
@@ -74,7 +109,27 @@ validation.agent = async (data) => {
         lastName: Joi.string().required(),
         email: Joi.string().email().required(),
         phone: Joi.string().required(),
-        city: Joi.string().required()
+        city: Joi.string().required(),
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
+validation.client = async (data) => {
+    const schema = Joi.object({
+        firstName: Joi.string().required(),
+        lastName: Joi.string().required(),
+        email: Joi.string().email().required(),
+        phone: Joi.string().required(),
+        policy_id: Joi.required(),
+        policyStartDate: Joi.required(),
+        policyMaturityDate: Joi.required(),
     }).unknown();
 
     try {

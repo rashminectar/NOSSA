@@ -7,24 +7,32 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       primaryKey: true
     },
-    policy_id: {
+    userPolicy_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'policies',
+        model: 'user_policies',
         key: 'id'
       }
     },
-    user_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
-    },
-    claim_id: {
+    claimCode: {
       type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    name: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    phone: {
+      type: DataTypes.STRING(45),
+      allowNull: true
+    },
+    email: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    address: {
+      type: DataTypes.TEXT,
       allowNull: true
     },
     assignedTo: {
@@ -33,7 +41,8 @@ module.exports = function(sequelize, DataTypes) {
     },
     verifyStatus: {
       type: DataTypes.STRING(255),
-      allowNull: true
+      allowNull: false,
+      defaultValue: "Not Submited"
     },
     VerifiedDate: {
       type: DataTypes.DATE,
@@ -114,17 +123,10 @@ module.exports = function(sequelize, DataTypes) {
         ]
       },
       {
-        name: "fk_claims_policy_idx",
+        name: "fk_claims_userPolicy_idx",
         using: "BTREE",
         fields: [
-          { name: "policy_id" },
-        ]
-      },
-      {
-        name: "fk_claims_user_idx",
-        using: "BTREE",
-        fields: [
-          { name: "user_id" },
+          { name: "userPolicy_id" },
         ]
       },
     ]

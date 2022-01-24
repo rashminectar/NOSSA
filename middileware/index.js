@@ -13,11 +13,31 @@ middileware.checkAuthentication = (req, res, next) => {
     } catch (error) {
         return res.status(Constant.INVALID_CODE).json({
             code: Constant.INVALID_CODE,
-            massage: Constant.INVALID_TOKEN,
+            message: Constant.INVALID_TOKEN,
             data: null
         })
     }
 }
 
+middileware.checkClientCreateAuthentication = (req, res, next) => {
+    try {
+        let { role } = req.user;
+        if (role == 3) {
+            next();
+        } else {
+            return res.status(Constant.INVALID_CODE).json({
+                code: Constant.INVALID_CODE,
+                message: Constant.USER_NOT_AUTHORIZED,
+                data: null
+            })
+        }
+    } catch (error) {
+        return res.status(Constant.SERVER_ERROR).json({
+            code: Constant.SERVER_ERROR,
+            message: Constant.INVALID_TOKEN,
+            data: null
+        })
+    }
+}
 
 module.exports = middileware;

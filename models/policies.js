@@ -31,7 +31,7 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.TEXT,
       allowNull: true
     },
-    activStatus: {
+    activeStatus: {
       type: DataTypes.BOOLEAN,
       allowNull: true,
       defaultValue: 1

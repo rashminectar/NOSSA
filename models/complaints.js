@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize');
-module.exports = function(sequelize, DataTypes) {
+module.exports = function (sequelize, DataTypes) {
   return sequelize.define('complaints', {
     id: {
       autoIncrement: true,
@@ -7,23 +7,15 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       primaryKey: true
     },
-    complaint_id: {
+    complaintCode: {
       type: DataTypes.STRING(255),
       allowNull: false
     },
-    policy_id: {
+    userPolicy_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'policies',
-        key: 'id'
-      }
-    },
-    user_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'users',
+        model: 'user_policies',
         key: 'id'
       }
     },
@@ -70,17 +62,10 @@ module.exports = function(sequelize, DataTypes) {
         ]
       },
       {
-        name: "fk_complaints_policy_idx",
+        name: "fk_complaints_userPolicy_idx",
         using: "BTREE",
         fields: [
-          { name: "policy_id" },
-        ]
-      },
-      {
-        name: "fk_complaints_user_idx",
-        using: "BTREE",
-        fields: [
-          { name: "user_id" },
+          { name: "userPolicy_id" },
         ]
       },
     ]
