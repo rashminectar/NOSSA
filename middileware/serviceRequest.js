@@ -1,47 +1,18 @@
 'use strict'
-const claimMiddileware = {};
+const serviceRequestMiddileware = {};
 const Constant = require('../config/constant')
 var db = require("../models");
-const claims = db.claims;
+const serviceRequest = db.service_request;
 const userPolicy = db.user_policies;
 
-claimMiddileware.checkClaimGetAuthentication = (req, res, next) => {
-    try {
-        let { userId, role } = req.user;
-
-        if (role === 1 || role === 2) {
-            next();
-        } else if (role === 3) {
-            req.query.agent_id = userId;
-            next();
-        } else if (role === 4) {
-            req.query.user_id = userId;
-            next();
-        } else {
-            return res.status(Constant.SUCCESS_CODE).json({
-                code: Constant.INVALID_CODE,
-                message: Constant.USER_NOT_AUTHORIZED,
-                data: null
-            })
-        }
-    } catch (error) {
-        return res.status(Constant.SERVER_ERROR).json({
-            code: Constant.SERVER_ERROR,
-            message: Constant.INVALID_TOKEN,
-            data: error.message
-        })
-    }
-}
-
-claimMiddileware.checkClaimCreateAuthentication = (req, res, next) => {
+serviceRequestMiddileware.checkServiceCreateAuthentication = (req, res, next) => {
     try {
         let { userId, role } = req.user;
         let { userPolicy_id } = req.body;
-
         if (role == 4 && userPolicy_id) {
             userPolicy.findOne({
                 where: {
-                    id: parseInt(userPolicy_id),
+                    id: userPolicy_id,
                     status: true
                 }
             }).then((result) => {
@@ -71,20 +42,20 @@ claimMiddileware.checkClaimCreateAuthentication = (req, res, next) => {
     } catch (error) {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
-            message: Constant.INVALID_TOKEN,
-            data: null
+            message: Constant.SOMETHING_WENT_WRONG,
+            data: error.message.message
         })
     }
 }
 
-claimMiddileware.checkClaimDeleteAuthentication = (req, res, next) => {
+serviceRequestMiddileware.checkServiceDeleteAuthentication = (req, res, next) => {
     try {
         let { userId, role } = req.user;
         let { id } = req.body;
         if (role == 1 || role == 2) {
             next();
         } else {
-            claims.findOne({
+            serviceRequest.findOne({
                 where: { id: id, status: true },
                 include: [{
                     model: userPolicy,
@@ -105,28 +76,28 @@ claimMiddileware.checkClaimDeleteAuthentication = (req, res, next) => {
             }).catch((error) => {
                 return res.status(Constant.SERVER_ERROR).json({
                     code: Constant.SERVER_ERROR,
-                    message: Constant.USER_NOT_AUTHORIZED,
-                    data: error.message
+                    message: Constant.SOMETHING_WENT_WRONG,
+                    data: error.message.message
                 })
             })
         }
     } catch (error) {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
-            message: Constant.INVALID_TOKEN,
-            data: error.message
+            message: Constant.SOMETHING_WENT_WRONG,
+            data: error.message.message
         })
     }
 }
 
-claimMiddileware.checkClaimVerifyAuthentication = (req, res, next) => {
+serviceRequestMiddileware.checkServiceVerifyAuthentication = (req, res, next) => {
     try {
         let { userId, role } = req.user;
         let { id } = req.body;
         if ((role === 1 || role === 2)) {
             next();
         } else if (role === 3) {
-            claims.findOne({
+            serviceRequest.findOne({
                 where: { id: id, status: true },
                 include: [{
                     model: userPolicy,
@@ -147,8 +118,8 @@ claimMiddileware.checkClaimVerifyAuthentication = (req, res, next) => {
             }).catch((error) => {
                 return res.status(Constant.SERVER_ERROR).json({
                     code: Constant.SERVER_ERROR,
-                    message: Constant.USER_NOT_AUTHORIZED,
-                    data: error.message
+                    message: Constant.SOMETHING_WENT_WRONG,
+                    data: error.message.message
                 })
             })
         } else {
@@ -161,11 +132,38 @@ claimMiddileware.checkClaimVerifyAuthentication = (req, res, next) => {
     } catch (error) {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
-            message: Constant.INVALID_TOKEN,
-            data: null
+            message: Constant.SOMETHING_WENT_WRONG,
+            data: error.message.message
         })
     }
 }
 
+serviceRequestMiddileware.checkServiceGetAuthentication = (req, res, next) => {
+    try {
+        let { userId, role } = req.user;
+        // let { agent_id, user_id } = req.query;
+        if (role === 1 || role === 2) {
+            next();
+        } else if (role === 3) {
+            req.query.agent_id = userId;
+            next();
+        } else if (role === 4) {
+            req.query.user_id = userId;
+            next();
+        } else {
+            return res.status(Constant.SUCCESS_CODE).json({
+                code: Constant.INVALID_CODE,
+                message: Constant.USER_NOT_AUTHORIZED,
+                data: null
+            })
+        }
+    } catch (error) {
+        return res.status(Constant.SERVER_ERROR).json({
+            code: Constant.SERVER_ERROR,
+            message: Constant.SOMETHING_WENT_WRONG,
+            data: error.message.message
+        })
+    }
+}
 
-module.exports = claimMiddileware;
+module.exports = serviceRequestMiddileware;

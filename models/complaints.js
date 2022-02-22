@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize');
-module.exports = function (sequelize, DataTypes) {
+module.exports = function(sequelize, DataTypes) {
   return sequelize.define('complaints', {
     id: {
       autoIncrement: true,
@@ -37,7 +37,8 @@ module.exports = function (sequelize, DataTypes) {
     },
     verifyStatus: {
       type: DataTypes.STRING(255),
-      allowNull: true
+      allowNull: true,
+      defaultValue: "Pending"
     },
     VerifiedDate: {
       type: DataTypes.DATE,

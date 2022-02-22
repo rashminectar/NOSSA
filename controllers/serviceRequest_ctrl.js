@@ -5,14 +5,14 @@ var db = require("../models");
 const Constant = require('../config/constant');
 const users = db.users;
 const policy = db.policies;
-const complaints = db.complaints;
+const serviceRequests = db.service_request;
 const userPolicy = db.user_policies;
-const complaint = {};
+const serviceRequest = {};
 const Op = db.Op;
 
-complaint.getAllComplaint = async (req, res) => {
+serviceRequest.getAllService = async (req, res) => {
     try {
-        let { search, policy_id, user_id, agent_id, verifyStatus } = req.query;
+        let { search, policy_id, user_id, agent_id, verifyStatus, serviceName } = req.query;
         let condition = {
             status: true
         }
@@ -33,6 +33,10 @@ complaint.getAllComplaint = async (req, res) => {
             condition['verifyStatus'] = verifyStatus;
         }
 
+        if (serviceName) {
+            condition['serviceName'] = serviceName;
+        }
+
         if (search) {
             condition[Op.or] = {
                 "$userPolicy.policy.policyName$": {
@@ -50,10 +54,13 @@ complaint.getAllComplaint = async (req, res) => {
                 "verifyStatus": {
                     [Op.like]: `%${search}%`
                 },
+                "serviceName": {
+                    [Op.like]: `%${search}%`
+                },
             }
         }
 
-        complaints.findAll({
+        serviceRequests.findAll({
             where: condition,
             include: [{
                 model: userPolicy,
@@ -105,24 +112,22 @@ complaint.getAllComplaint = async (req, res) => {
             data: error.message
         })
     }
-
 }
 
-complaint.add = async (req, res) => {
+serviceRequest.add = async (req, res) => {
     try {
-        let complaintData = await validation.complaint(req.body);
+        let serviceRequestData = await validation.serviceRequest(req.body);
 
-        if (complaintData.message) {
+        if (serviceRequestData.message) {
             return res.status(Constant.ERROR_CODE).json({
                 code: Constant.ERROR_CODE,
                 message: Constant.INVAILID_DATA,
-                data: complaintData.message
+                data: serviceRequestData.message
             })
         } else {
-            complaintData.complaintCode = await utility.generateCode('CM', 'complaintId', 8);
-            complaintData.complaintDate = new Date();
-
-            let result = await complaints.create(complaintData);
+            serviceRequestData.serviceCode = await utility.generateCode('REQ_', 'serviceId', 10);
+            serviceRequestData.date = new Date();
+            let result = await serviceRequests.create(serviceRequestData);
 
             if (result) {
                 return res.status(Constant.SUCCESS_CODE).json({
@@ -148,23 +153,26 @@ complaint.add = async (req, res) => {
     }
 }
 
-complaint.edit = async (req, res) => {
+serviceRequest.edit = async (req, res) => {
     try {
-        let { id, subject, description } = req.body;
+        let { id, serviceName, priorityStatus, description, assignedTo, assignedBy } = req.body;
         if (id) {
-            complaints.findOne({
+            serviceRequests.findOne({
                 where: {
                     id: id,
                     status: true
                 }
             }).then(async (result) => {
                 if (result) {
-                    let complaintData = {
-                        subject: subject,
-                        description: description
+                    let serviceRequestData = {
+                        serviceName: serviceName,
+                        priorityStatus: priorityStatus,
+                        description: description,
+                        assignedTo: assignedTo,
+                        assignedBy: assignedBy
                     }
 
-                    await result.update(complaintData);
+                    await result.update(serviceRequestData);
                     return res.status(Constant.SUCCESS_CODE).json({
                         code: Constant.SUCCESS_CODE,
                         message: Constant.UPDATED_SUCCESS,
@@ -202,21 +210,21 @@ complaint.edit = async (req, res) => {
     }
 }
 
-complaint.delete = async (req, res) => {
+serviceRequest.delete = async (req, res) => {
     try {
         let { id } = req.body;
 
-        complaints.findOne({
+        serviceRequests.findOne({
             where: {
                 id: id,
                 status: true
             }
         }).then(async (result) => {
             if (result) {
-                let complaintData = {
+                let serviceRequestData = {
                     status: 0
                 }
-                await result.update(complaintData);
+                await result.update(serviceRequestData);
 
                 return res.status(Constant.SUCCESS_CODE).json({
                     code: Constant.SUCCESS_CODE,
@@ -249,21 +257,22 @@ complaint.delete = async (req, res) => {
     }
 }
 
-complaint.verifyRequest = async (req, res) => {
+serviceRequest.verifyRequest = async (req, res) => {
     try {
-        let { verifyStatus, id } = req.body;
-        complaints.findOne({
+        let { verifyStatus, priorityStatus, id } = req.body;
+        serviceRequests.findOne({
             where: {
                 id: id,
                 status: true
             }
         }).then(async (result) => {
             if (result) {
-                let complaintData = {
+                let serviceRequestData = {
                     VerifiedDate: new Date(),
+                    priorityStatus: priorityStatus,
                     verifyStatus: verifyStatus
                 }
-                await result.update(complaintData);
+                await result.update(serviceRequestData);
                 return res.status(Constant.SUCCESS_CODE).json({
                     code: Constant.SUCCESS_CODE,
                     message: Constant.VERIFIED_SUCCESS,
@@ -292,4 +301,47 @@ complaint.verifyRequest = async (req, res) => {
     }
 }
 
-module.exports = complaint;
+serviceRequest.assignRequest = async (req, res) => {
+    try {
+        let { assignedTo, id } = req.body;
+        serviceRequests.findOne({
+            where: {
+                id: id,
+                status: true
+            }
+        }).then(async (result) => {
+            if (result) {
+                let serviceRequestData = {
+                    VerifiedDate: new Date(),
+                    assignedTo: assignedTo
+                }
+                await result.update(serviceRequestData);
+                return res.status(Constant.SUCCESS_CODE).json({
+                    code: Constant.SUCCESS_CODE,
+                    message: Constant.VERIFIED_SUCCESS,
+                    data: result
+                })
+            } else {
+                return res.status(Constant.ERROR_CODE).json({
+                    code: Constant.ERROR_CODE,
+                    message: Constant.REQUEST_NOT_FOUND,
+                    data: result
+                })
+            }
+        }).catch(error => {
+            return res.status(Constant.SERVER_ERROR).json({
+                code: Constant.SERVER_ERROR,
+                message: Constant.SOMETHING_WENT_WRONG,
+                data: error.message
+            })
+        })
+    } catch (error) {
+        return res.status(Constant.SERVER_ERROR).json({
+            code: Constant.SERVER_ERROR,
+            message: Constant.SOMETHING_WENT_WRONG,
+            data: error.message
+        })
+    }
+}
+
+module.exports = serviceRequest;

@@ -14,7 +14,7 @@ module.exports = function(sequelize, DataTypes) {
     isActive: {
       type: DataTypes.BOOLEAN,
       allowNull: true,
-      defaultValue: 0
+      defaultValue: 1
     },
     emailBody: {
       type: DataTypes.TEXT,

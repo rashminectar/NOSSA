@@ -8,6 +8,7 @@ const policy = db.policies;
 const premium = db.premiums;
 const userPolicy = db.user_policies;
 const premiums = {};
+const Op = db.Op;
 
 premiums.getAllPremium = async (req, res) => {
     try {
@@ -17,30 +18,30 @@ premiums.getAllPremium = async (req, res) => {
         }
 
         if (policy_id) {
-            condition['$userPolicy.policy_id'] = policy_id;
+            condition['$userPolicy.policy_id$'] = policy_id;
         }
 
         if (user_id) {
-            condition['$userPolicy.user_id'] = user_id;
+            condition['$userPolicy.user_id$'] = user_id;
         }
 
         if (agent_id) {
-            condition['$userPolicy.agent_id'] = agent_id;
+            condition['$userPolicy.agent_id$'] = agent_id;
         }
 
         if (search) {
-            condition['$or'] = {
-                "$userPolicy.policy.policyName": {
-                    $like: `%${search}%`
+            condition[Op.or] = {
+                "$userPolicy.policy.policyName$": {
+                    [Op.like]: `%${search}%`
                 },
-                "$userPolicy.policy.policyCode": {
-                    $like: `%${search}%`
+                "$userPolicy.policy.policyCode$": {
+                    [Op.like]: `%${search}%`
                 },
-                "$userPolicy.user.firstName": {
-                    $like: `%${search}%`
+                "$userPolicy.user.firstName$": {
+                    [Op.like]: `%${search}%`
                 },
                 "premiumAmount": {
-                    $like: `%${search}%`
+                    [Op.like]: `%${search}%`
                 },
             }
         }
@@ -84,20 +85,17 @@ premiums.getAllPremium = async (req, res) => {
                 data: result
             })
         }).catch(error => {
-            console.log("11 ", error)
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
                 message: Constant.SOMETHING_WENT_WRONG,
-                data: error
+                data: error.message
             })
         })
     } catch (error) {
-        console.log("22 ", error)
-
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     }
 
@@ -126,7 +124,7 @@ premiums.payPremium = async (req, res) => {
         } else {
             return res.status(Constant.ERROR_CODE).json({
                 code: Constant.ERROR_CODE,
-                message: Constant.SOMETHING_WENT_WRONG,
+                message: Constant.REQUEST_NOT_FOUND,
                 data: result
             })
         }
@@ -134,7 +132,7 @@ premiums.payPremium = async (req, res) => {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     })
 }

@@ -1,5 +1,8 @@
 const Joi = require('joi');
-
+const Constant = require('../config/constant')
+var db = require("../models");
+const claims = db.claims;
+const userPolicy = db.user_policies;
 var validation = {};
 
 validation.checkUserData = async (data) => {
@@ -17,7 +20,6 @@ validation.checkUserData = async (data) => {
         return err;
     }
 }
-
 
 validation.userLogin = async (data) => {
     const schema = Joi.object({
@@ -63,8 +65,7 @@ validation.claim = async (data) => {
     try {
         const value = await schema.validateAsync(data);
         return value;
-    }
-    catch (err) {
+    } catch (err) {
         return err;
     }
 }
@@ -73,8 +74,23 @@ validation.complaint = async (data) => {
     const schema = Joi.object({
         userPolicy_id: Joi.number().required(),
         subject: Joi.string().required(),
+        description: Joi.string().required()
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
+validation.serviceRequest = async (data) => {
+    const schema = Joi.object({
+        userPolicy_id: Joi.number().required(),
+        serviceName: Joi.string().required(),
         description: Joi.string().required(),
-        complaintDate: Joi.required()
     }).unknown();
 
     try {
@@ -140,5 +156,122 @@ validation.client = async (data) => {
         return err;
     }
 }
+
+validation.reimbursement = async (data) => {
+    const schema = Joi.object({
+        type: Joi.string().required(),
+        name: Joi.string().required(),
+        address: Joi.string().required(),
+        area: Joi.string().required(),
+        contact: Joi.required(),
+        description: Joi.string().required()
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
+validation.notification = async (data) => {
+    const schema = Joi.object({
+        name: Joi.string().required(),
+        emailBody: Joi.string().required(),
+        textBody: Joi.string().required()
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
+validation.userNotification = async (data) => {
+    const schema = Joi.object({
+        user_id: Joi.required(),
+        notification_id: Joi.required(),
+        textStatus: Joi.required(),
+        emailStatus: Joi.required()
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
+validation.support = async (data) => {
+    const schema = Joi.object({
+        type: Joi.string().required(),
+        name: Joi.string().required(),
+        email: Joi.string().email().required(),
+        phone: Joi.string().required(),
+        subject: Joi.string().required(),
+        description: Joi.string().required(),
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
+validation.doctor = async (data) => {
+    const schema = Joi.object({
+        doctorName: Joi.string().required(),
+        specialization: Joi.string().required()
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
+validation.service = async (data) => {
+    const schema = Joi.object({
+        service: Joi.string().required()
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
+validation.changePassword = async (data) => {
+    const schema = Joi.object({
+        oldPassword: Joi.string().required(),
+        password: Joi.string().required()
+    }).unknown();
+
+    try {
+        const value = await schema.validateAsync(data);
+        return value;
+    }
+    catch (err) {
+        return err;
+    }
+}
+
+
 
 module.exports = validation;

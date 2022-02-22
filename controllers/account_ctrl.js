@@ -5,11 +5,13 @@ const db = require("../models");
 const bcrypt = require('bcryptjs');
 const salt = bcrypt.genSaltSync(10);
 const user = db.users;
+const userinfo = db.user_info;
 const utility = require('../helpers/utility')
 const validation = require('../helpers/validation')
 const Constant = require('../config/constant')
 const mailer = require('../lib/mailer')
 let account = {};
+const Op = db.Op;
 
 account.userRegistration = async (req, res) => {
   try {
@@ -69,7 +71,7 @@ account.userRegistration = async (req, res) => {
 
 account.userLogin = async (req, res) => {
   try {
-    let { userName, password } = req.body;
+    let { userName, password, role } = req.body;
     let userData = {
       userName: userName,
       password: password
@@ -85,30 +87,45 @@ account.userLogin = async (req, res) => {
     } else {
       let result = await user.findOne({
         where: {
-          '$or': {
+          [Op.or]: {
             userName: userName,
             email: userName
           }
         }
       })
       if (result && bcrypt.compareSync(password, result.password)) {
-        let params = {
-          userId: result.id,
-          firstName: result.firstName,
-          lastName: result.lastName,
-          userName: result.userName,
-          email: result.email,
-          gendar: result.gendar,
-          role: result.role,
-          phone: result.phone,
-          profileImg: result.profileImg
+        if (role && role == result.role) {
+
+          callFunction();
+        } else if (!role && result.role == 1 || result.role == 2) {
+
+          callFunction();
+        } else {
+          return res.status(Constant.FORBIDDEN_CODE).json({
+            code: Constant.FORBIDDEN_CODE,
+            message: Constant.USER_EMAIL_PASSWORD,
+            data: null
+          })
         }
-        params.jwtToken = jwt.sign(params, process.env.SECRET);
-        return res.status(Constant.SUCCESS_CODE).json({
-          code: Constant.SUCCESS_CODE,
-          message: Constant.USER_LOGIN_SUCCESS,
-          data: params
-        })
+        function callFunction() {
+          let params = {
+            userId: result.id,
+            firstName: result.firstName,
+            lastName: result.lastName,
+            userName: result.userName,
+            email: result.email,
+            gendar: result.gendar,
+            role: result.role,
+            phone: result.phone,
+            profileImg: result.profileImg
+          }
+          params.jwtToken = jwt.sign(params, process.env.SECRET);
+          return res.status(Constant.SUCCESS_CODE).json({
+            code: Constant.SUCCESS_CODE,
+            message: Constant.USER_LOGIN_SUCCESS,
+            data: params
+          })
+        }
       } else {
         return res.status(Constant.FORBIDDEN_CODE).json({
           code: Constant.FORBIDDEN_CODE,
@@ -118,11 +135,10 @@ account.userLogin = async (req, res) => {
       }
     }
   } catch (error) {
-    console.log("error ", error)
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
       message: Constant.SOMETHING_WENT_WRONG,
-      data: error.message
+      data: error.message.message
     })
   }
 }
@@ -350,36 +366,43 @@ account.resetPassword = async (req, res) => {
 
 account.changePassword = async (req, res) => {
   try {
-    let { oldPassword, password } = req.body;
-    let { email } = req.user;
+    let data = await validation.changePassword(req.body);
+    if (data.message) {
+      return res.status(Constant.ERROR_CODE).json({
+        code: Constant.ERROR_CODE,
+        message: Constant.INVAILID_DATA,
+        data: data.message
+      })
+    } else {
+      let { email } = req.user;
+      user.findOne({
+        where: {
+          email: email
+        }
+      }).then((result) => {
+        if (result && (bcrypt.compareSync(data.oldPassword, result.password))) {
+          var hash = bcrypt.hashSync(data.password, salt);
+          var UserData = {
+            password: hash
+          }
 
-    user.findOne({
-      where: {
-        email: email
-      }
-    }).then((result) => {
-      if (result && (bcrypt.compareSync(oldPassword, result.password))) {
-        var hash = bcrypt.hashSync(password, salt);
-        var UserData = {
-          password: hash
+          result.update(UserData);
+          return res.status(Constant.SUCCESS_CODE).json({
+            code: Constant.SUCCESS_CODE,
+            message: Constant.PASSWORD_RESET,
+            data: null
+          });
+
+        } else {
+          return res.status(Constant.ERROR_CODE).json({
+            code: Constant.ERROR_CODE,
+            message: Constant.USER_OLD_PASSWORD,
+            data: null
+          })
         }
 
-        result.update(UserData);
-        return res.status(Constant.SUCCESS_CODE).json({
-          code: Constant.SUCCESS_CODE,
-          message: Constant.PASSWORD_RESET,
-          data: null
-        });
-
-      } else {
-        return res.status(Constant.ERROR_CODE).json({
-          code: Constant.ERROR_CODE,
-          message: Constant.USER_OLD_PASSWORD,
-          data: null
-        })
-      }
-
-    })
+      })
+    }
   } catch (error) {
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
@@ -403,18 +426,18 @@ account.getAllUsers = async function (req, res) {
     }
 
     if (search) {
-      condition['$or'] = {
+      condition[Op.or] = {
         firstName: {
-          $like: `%${search}%`
+          [Op.like]: `%${search}%`
         },
         lastName: {
-          $like: `%${search}%`
+          [Op.like]: `%${search}%`
         },
         email: {
-          $like: `%${search}%`
+          [Op.like]: `%${search}%`
         },
         phone: {
-          $like: `%${search}%`
+          [Op.like]: `%${search}%`
         }
       }
     }
@@ -445,23 +468,30 @@ account.getAllUsers = async function (req, res) {
 
 account.getUserById = async (req, res) => {
   try {
-    let { userId } = req.body;
-    let result = await user.findOne({
-      where: {
-        id: userId
-      },
-      attributes: ["id", "firstName", "lastName", "role", "email", "phone", "gendar", "dob"]
-    })
+    let { user_id } = req.query;
+    if (user_id) {
+      let result = await user.findOne({
+        where: {
+          id: user_id
+        }
+      })
+      let { password, resetPasswordExpires, verificationToken, ...rest } = JSON.parse(JSON.stringify(result));
 
-    let message = (result.length > 0) ? Constant.USER_RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
-    return res.status(Constant.SUCCESS_CODE).json({
-      code: Constant.SUCCESS_CODE,
-      message: message,
-      data: result
-    })
+      let message = (rest) ? Constant.USER_RETRIEVE_SUCCESS : Constant.NO_DATA_FOUND
+      return res.status(Constant.SUCCESS_CODE).json({
+        code: Constant.SUCCESS_CODE,
+        message: message,
+        data: rest
+      })
+    } else {
+      return res.status(Constant.ERROR_CODE).json({
+        code: Constant.ERROR_CODE,
+        message: "user_id is required.",
+        data: {}
+      })
+    }
   }
   catch (err) {
-
     return res.status(Constant.SERVER_ERROR).json({
       code: Constant.SERVER_ERROR,
       message: Constant.SOMETHING_WENT_WRONG,
@@ -512,7 +542,7 @@ account.updateProfile = async (req, res) => {
       } else {
         return res.status(Constant.ERROR_CODE).json({
           code: Constant.ERROR_CODE,
-          message: Constant.USER_RESET_PASSWORD,
+          message: Constant.REQUEST_NOT_FOUND,
           data: null
         })
       }

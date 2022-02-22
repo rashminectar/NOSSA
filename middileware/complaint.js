@@ -1,5 +1,6 @@
 'use strict'
 const complaintMiddileware = {};
+const { admin } = require('googleapis/build/src/apis/admin');
 const Constant = require('../config/constant')
 var db = require("../models");
 const complaints = db.complaints;
@@ -9,6 +10,7 @@ complaintMiddileware.checkComplaintCreateAuthentication = (req, res, next) => {
     try {
         let { userId, role } = req.user;
         let { userPolicy_id } = req.body;
+        // 1 super admin, 2 admin 3 agent 4 client/customer 
         if (role == 4 && userPolicy_id) {
             userPolicy.findOne({
                 where: {
@@ -29,7 +31,7 @@ complaintMiddileware.checkComplaintCreateAuthentication = (req, res, next) => {
                 return res.status(Constant.SERVER_ERROR).json({
                     code: Constant.SERVER_ERROR,
                     message: Constant.SOMETHING_WENT_WRONG,
-                    data: error.message
+                    data: error.message.message
                 })
             })
         } else {
@@ -43,7 +45,7 @@ complaintMiddileware.checkComplaintCreateAuthentication = (req, res, next) => {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error.message
+            data: error.message.message
         })
     }
 }
@@ -77,7 +79,7 @@ complaintMiddileware.checkComplaintDeleteAuthentication = (req, res, next) => {
                 return res.status(Constant.SERVER_ERROR).json({
                     code: Constant.SERVER_ERROR,
                     message: Constant.SOMETHING_WENT_WRONG,
-                    data: error.message
+                    data: error.message.message
                 })
             })
         }
@@ -85,7 +87,7 @@ complaintMiddileware.checkComplaintDeleteAuthentication = (req, res, next) => {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error.message
+            data: error.message.message
         })
     }
 }
@@ -119,7 +121,7 @@ complaintMiddileware.checkComplaintVerifyAuthentication = (req, res, next) => {
                 return res.status(Constant.SERVER_ERROR).json({
                     code: Constant.SERVER_ERROR,
                     message: Constant.SOMETHING_WENT_WRONG,
-                    data: error.message
+                    data: error.message.message
                 })
             })
         } else {
@@ -133,7 +135,7 @@ complaintMiddileware.checkComplaintVerifyAuthentication = (req, res, next) => {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error.message
+            data: error.message.message
         })
     }
 }
@@ -141,10 +143,13 @@ complaintMiddileware.checkComplaintVerifyAuthentication = (req, res, next) => {
 complaintMiddileware.checkComplaintGetAuthentication = (req, res, next) => {
     try {
         let { userId, role } = req.user;
-        let { agent_id, user_id } = req.query;
-        if ((role === 1 || role === 2)
-            || (role === 3 && agent_id == userId)
-            || (role === 4 && user_id == userId)) {
+        if (role === 1 || role === 2) {
+            next();
+        } else if (role === 3) {
+            req.query.agent_id = userId;
+            next();
+        } else if (role === 4) {
+            req.query.user_id = userId;
             next();
         } else {
             return res.status(Constant.SUCCESS_CODE).json({
@@ -157,7 +162,7 @@ complaintMiddileware.checkComplaintGetAuthentication = (req, res, next) => {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error.message
+            data: error.message.message
         })
     }
 }

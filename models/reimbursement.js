@@ -7,6 +7,10 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       primaryKey: true
     },
+    type: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
     referenceNumber: {
       type: DataTypes.STRING(255),
       allowNull: true

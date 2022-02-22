@@ -14,6 +14,7 @@ var _reimbursement_service_master = require("./reimbursement_service_master");
 var _reimbursement_services = require("./reimbursement_services");
 var _service_request = require("./service_request");
 var _settings = require("./settings");
+var _supports = require("./supports");
 var _user_info = require("./user_info");
 var _user_notification = require("./user_notification");
 var _user_policies = require("./user_policies");
@@ -35,6 +36,7 @@ function initModels(sequelize) {
   var reimbursement_services = _reimbursement_services(sequelize, DataTypes);
   var service_request = _service_request(sequelize, DataTypes);
   var settings = _settings(sequelize, DataTypes);
+  var supports = _supports(sequelize, DataTypes);
   var user_info = _user_info(sequelize, DataTypes);
   var user_notification = _user_notification(sequelize, DataTypes);
   var user_policies = _user_policies(sequelize, DataTypes);
@@ -46,10 +48,6 @@ function initModels(sequelize) {
   claims.hasMany(claim_documents, { as: "claim_documents", foreignKey: "claim_id" });
   user_notification.belongsTo(notification_master, { as: "notification", foreignKey: "notification_id" });
   notification_master.hasMany(user_notification, { as: "user_notifications", foreignKey: "notification_id" });
-  complaints.belongsTo(user_policies, { as: "userPolicy", foreignKey: "userPolicy_id" });
-  user_policies.hasMany(complaints, { as: "complaints", foreignKey: "userPolicy_id" });
-  service_request.belongsTo(policies, { as: "policy", foreignKey: "policy_id" });
-  policies.hasMany(service_request, { as: "service_requests", foreignKey: "policy_id" });
   user_policies.belongsTo(policies, { as: "policy", foreignKey: "policy_id" });
   policies.hasMany(user_policies, { as: "user_policies", foreignKey: "policy_id" });
   reimbursement_doctors.belongsTo(reimbursement, { as: "reimbursement", foreignKey: "reimbursement_id" });
@@ -62,10 +60,12 @@ function initModels(sequelize) {
   reimbursement_service_master.hasMany(reimbursement_services, { as: "reimbursement_services", foreignKey: "service_id" });
   claims.belongsTo(user_policies, { as: "userPolicy", foreignKey: "userPolicy_id" });
   user_policies.hasMany(claims, { as: "claims", foreignKey: "userPolicy_id" });
+  complaints.belongsTo(user_policies, { as: "userPolicy", foreignKey: "userPolicy_id" });
+  user_policies.hasMany(complaints, { as: "complaints", foreignKey: "userPolicy_id" });
   premiums.belongsTo(user_policies, { as: "userPolicy", foreignKey: "userPolicy_id" });
   user_policies.hasMany(premiums, { as: "premia", foreignKey: "userPolicy_id" });
-  service_request.belongsTo(users, { as: "user", foreignKey: "user_id" });
-  users.hasMany(service_request, { as: "service_requests", foreignKey: "user_id" });
+  service_request.belongsTo(user_policies, { as: "userPolicy", foreignKey: "userPolicy_id" });
+  user_policies.hasMany(service_request, { as: "service_requests", foreignKey: "userPolicy_id" });
   user_notification.belongsTo(users, { as: "user", foreignKey: "user_id" });
   users.hasMany(user_notification, { as: "user_notifications", foreignKey: "user_id" });
   user_policies.belongsTo(users, { as: "agent", foreignKey: "agent_id" });
@@ -89,6 +89,7 @@ function initModels(sequelize) {
     reimbursement_services,
     service_request,
     settings,
+    supports,
     user_info,
     user_notification,
     user_policies,

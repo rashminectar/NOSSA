@@ -7,27 +7,19 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       primaryKey: true
     },
-    service_id: {
+    serviceCode: {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    policy_id: {
+    userPolicy_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'policies',
+        model: 'user_policies',
         key: 'id'
       }
     },
-    user_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
-    },
-    name: {
+    serviceName: {
       type: DataTypes.STRING(255),
       allowNull: true
     },
@@ -37,7 +29,8 @@ module.exports = function(sequelize, DataTypes) {
     },
     priorityStatus: {
       type: DataTypes.STRING(45),
-      allowNull: true
+      allowNull: true,
+      defaultValue: "Low"
     },
     description: {
       type: DataTypes.TEXT,
@@ -53,7 +46,8 @@ module.exports = function(sequelize, DataTypes) {
     },
     verifyStatus: {
       type: DataTypes.STRING(255),
-      allowNull: true
+      allowNull: true,
+      defaultValue: "Pending"
     },
     VerifiedDate: {
       type: DataTypes.DATE,
@@ -78,17 +72,10 @@ module.exports = function(sequelize, DataTypes) {
         ]
       },
       {
-        name: "fk_service_policy_idx",
+        name: "fk_service_userPolicy_idx",
         using: "BTREE",
         fields: [
-          { name: "policy_id" },
-        ]
-      },
-      {
-        name: "fk_service_user_idx",
-        using: "BTREE",
-        fields: [
-          { name: "user_id" },
+          { name: "userPolicy_id" },
         ]
       },
     ]

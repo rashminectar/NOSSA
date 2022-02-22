@@ -1,47 +1,34 @@
 const Sequelize = require('sequelize');
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('premiums', {
+  return sequelize.define('supports', {
     id: {
       autoIncrement: true,
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
     },
-    userPolicy_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'user_policies',
-        key: 'id'
-      }
-    },
-    premiumAmount: {
-      type: DataTypes.DECIMAL(18,2),
-      allowNull: true
-    },
-    premiumStatus: {
-      type: DataTypes.STRING(45),
-      allowNull: true,
-      defaultValue: "Unpaid"
-    },
-    paymentType: {
+    type: {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    paymentStatus: {
-      type: DataTypes.STRING(45),
-      allowNull: true
-    },
-    paymentDate: {
-      type: DataTypes.DATE,
-      allowNull: true
-    },
-    invoiceNumber: {
+    name: {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    invoice: {
+    email: {
       type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    phone: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    subject: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    description: {
+      type: DataTypes.TEXT,
       allowNull: true
     },
     status: {
@@ -51,7 +38,7 @@ module.exports = function(sequelize, DataTypes) {
     }
   }, {
     sequelize,
-    tableName: 'premiums',
+    tableName: 'supports',
     timestamps: true,
     indexes: [
       {
@@ -60,13 +47,6 @@ module.exports = function(sequelize, DataTypes) {
         using: "BTREE",
         fields: [
           { name: "id" },
-        ]
-      },
-      {
-        name: "fk_premiums_policy_idx",
-        using: "BTREE",
-        fields: [
-          { name: "userPolicy_id" },
         ]
       },
     ]

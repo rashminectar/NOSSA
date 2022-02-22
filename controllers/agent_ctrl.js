@@ -9,95 +9,135 @@ const salt = bcrypt.genSaltSync(10);
 const users = db.users;
 const Constant = require('../config/constant')
 const userPolicy = db.user_policies;
+const Op = db.Op;
 let agent = {};
 
 agent.create = async (req, res) => {
     try {
-        let { id, firstName, lastName, email, gendar, phone, dob, currentAddress, permanentAddress, city, activeStatus } = req.body;
-
-        if (id != null && id != undefined && id != "") {
-            let agentData = {
-                lastName: lastName,
-                firstName: firstName,
-                email: email,
-                gendar: gendar,
-                phone: phone,
-                dob: dob,
-                currentAddress: currentAddress,
-                permanentAddress: permanentAddress,
-                city: city,
-                activeStatus: activeStatus,
+        let { id, firstName, lastName, email, gendar, phone, dob, currentAddress, permanentAddress, city, activeStatus, profileImg } = req.body;
+        users.findOne({
+            where: {
+                status: true,
+                email: email
             }
-            users.findOne({
-                where: {
-                    id: id
-                }
-            }).then(async (result) => {
-                if (result) {
-                    result.update(agentData)
-                    return res.status(Constant.SUCCESS_CODE).json({
-                        code: Constant.SUCCESS_CODE,
-                        message: Constant.UPDATED_SUCCESS,
-                        data: result
-                    })
-
-                } else {
+        }).then(async (resUser) => {
+            // if (!resUser) {
+            if (id != null && id != undefined && id != "") {
+                if (resUser && resUser.id != id) {
                     return res.status(Constant.ERROR_CODE).json({
                         code: Constant.ERROR_CODE,
-                        message: Constant.SOMETHING_WENT_WRONG,
-                        data: result
+                        message: Constant.EMAIL_ALREADY_REGISTERED,
+                        data: {}
+                    })
+                } else {
+                    let agentData = {
+                        lastName: lastName,
+                        firstName: firstName,
+                        email: email,
+                        gendar: gendar,
+                        phone: phone,
+                        dob: dob,
+                        currentAddress: currentAddress,
+                        permanentAddress: permanentAddress,
+                        city: city,
+                        activeStatus: activeStatus,
+                    }
+                    users.findOne({
+                        where: {
+                            id: id
+                        }
+                    }).then(async (result) => {
+                        if (result) {
+                            if (profileImg) {
+                                agentData.profileImg = await utility.uploadBase64Image(profileImg);
+                            }
+                            result.update(agentData)
+                            return res.status(Constant.SUCCESS_CODE).json({
+                                code: Constant.SUCCESS_CODE,
+                                message: Constant.UPDATED_SUCCESS,
+                                data: result
+                            })
+                        } else {
+                            return res.status(Constant.ERROR_CODE).json({
+                                code: Constant.ERROR_CODE,
+                                message: Constant.REQUEST_NOT_FOUND,
+                                data: result
+                            })
+                        }
+                    }).catch(error => {
+                        return res.status(Constant.SERVER_ERROR).json({
+                            code: Constant.SERVER_ERROR,
+                            message: Constant.SOMETHING_WENT_WRONG,
+                            data: error.message
+                        })
                     })
                 }
-            }).catch(error => {
-                return res.status(Constant.SERVER_ERROR).json({
-                    code: Constant.SERVER_ERROR,
-                    message: Constant.SOMETHING_WENT_WRONG,
-                    data: error
-                })
-            })
-        } else {
 
-            let agentData = await validation.agent(req.body);
-            if (agentData.message) {
-                return res.status(Constant.ERROR_CODE).json({
-                    code: Constant.ERROR_CODE,
-                    message: Constant.INVAILID_DATA,
-                    data: agentData.message
-                })
             } else {
-                agentData.role = 3;
-                agentData.userName = await utility.generateCode('NA', 'agentId', 6);
-                let password = utility.randomString(6);
-                agentData.password = bcrypt.hashSync(password, salt);
-
-                let objMail = {
-                    userName: agentData.userName,
-                    password: password,
-                    email: agentData.email,
-                }
-                let result = await users.create(agentData);
-                if (result) {
-                    await mail.sendWelcomeMail(objMail);
-                    return res.status(Constant.SUCCESS_CODE).json({
-                        code: Constant.SUCCESS_CODE,
-                        message: Constant.SAVE_SUCCESS,
-                        data: result
-                    })
+                if (!resUser) {
+                    let agentData = await validation.agent(req.body);
+                    if (agentData.message) {
+                        return res.status(Constant.ERROR_CODE).json({
+                            code: Constant.ERROR_CODE,
+                            message: Constant.INVAILID_DATA,
+                            data: agentData.message
+                        })
+                    } else {
+                        agentData.role = 3;
+                        agentData.userName = await utility.generateCode('NA', 'agentId', 6);
+                        let password = utility.randomString(6);
+                        agentData.password = bcrypt.hashSync(password, salt);
+                        if (profileImg) {
+                            agentData.profileImg = await utility.uploadBase64Image(profileImg);
+                        }
+                        let objMail = {
+                            userName: agentData.userName,
+                            password: password,
+                            email: agentData.email,
+                        }
+                        let result = await users.create(agentData);
+                        if (result) {
+                            await mail.sendWelcomeMail(objMail);
+                            return res.status(Constant.SUCCESS_CODE).json({
+                                code: Constant.SUCCESS_CODE,
+                                message: Constant.SAVE_SUCCESS,
+                                data: result
+                            })
+                        } else {
+                            return res.status(Constant.ERROR_CODE).json({
+                                code: Constant.ERROR_CODE,
+                                message: Constant.SOMETHING_WENT_WRONG,
+                                data: result
+                            })
+                        }
+                    }
                 } else {
                     return res.status(Constant.ERROR_CODE).json({
                         code: Constant.ERROR_CODE,
-                        message: Constant.SOMETHING_WENT_WRONG,
-                        data: result
+                        message: Constant.EMAIL_ALREADY_REGISTERED,
+                        data: {}
                     })
                 }
             }
-        }
+            // } else {
+            //     return res.status(Constant.ERROR_CODE).json({
+            //         code: Constant.ERROR_CODE,
+            //         message: Constant.EMAIL_ALREADY_REGISTERED,
+            //         data: {}
+            //     })
+            // }
+        }).catch(async (error) => {
+            return res.status(Constant.SERVER_ERROR).json({
+                code: Constant.SERVER_ERROR,
+                message: Constant.SOMETHING_WENT_WRONG,
+                data: error.message
+            })
+        })
     } catch (error) {
-        console.log(error)
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     }
 }
@@ -126,7 +166,7 @@ agent.delete = async (req, res) => {
             } else {
                 return res.status(Constant.ERROR_CODE).json({
                     code: Constant.ERROR_CODE,
-                    message: Constant.SOMETHING_WENT_WRONG,
+                    message: Constant.REQUEST_NOT_FOUND,
                     data: result
                 })
             }
@@ -135,7 +175,7 @@ agent.delete = async (req, res) => {
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
                 message: Constant.SOMETHING_WENT_WRONG,
-                data: error
+                data: error.message
             })
         })
 
@@ -143,7 +183,7 @@ agent.delete = async (req, res) => {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     }
 
@@ -162,15 +202,15 @@ agent.getAllAgent = async (req, res) => {
         }
 
         if (search) {
-            condition['$or'] = {
+            condition[Op.or] = {
                 firstName: {
-                    $like: `%${search}%`
+                    [Op.like]: `%${search}%`
                 },
                 lastName: {
-                    $like: `%${search}%`
+                    [Op.like]: `%${search}%`
                 },
                 userName: {
-                    $like: `%${search}%`
+                    [Op.like]: `%${search}%`
                 },
             }
         }
@@ -200,161 +240,20 @@ agent.getAllAgent = async (req, res) => {
                 data: result
             })
         }).catch(error => {
-            console.log("11 ", error)
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
                 message: Constant.SOMETHING_WENT_WRONG,
-                data: error
+                data: error.message
             })
         })
     } catch (error) {
-        console.log("22 ", error)
-
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     }
 
-}
-
-agent.exportReport = async (req, res) => {
-    let { search, downloadType } = req.query;
-    if (downloadType) {
-
-        let conf = {};
-        let data = []
-        conf.cols = [{
-            caption: "HR Name",
-            type: "string",
-        }, {
-            caption: "HR Code",
-            type: "string",
-        }, {
-            caption: "Clients",
-            type: "string",
-        }, {
-            caption: "Complaint Assigned",
-            type: "string",
-        }, {
-            caption: "Complaint Resolved",
-            type: "string",
-        }];
-        conf.rows = [];
-        let condition = {
-            status: true
-        }
-
-        if (id) {
-            condition['id'] = id;
-        }
-
-        if (search) {
-            condition['$or'] = {
-                firstName: {
-                    $like: `%${search}%`
-                },
-                lastName: {
-                    $like: `%${search}%`
-                },
-                userName: {
-                    $like: `%${search}%`
-                },
-            }
-        }
-
-        users.findAll({
-            attributes: {
-                include: [[Sequelize.fn("COUNT", Sequelize.col("user_policies.id")), "totalClient"]]
-            },
-            where: condition,
-            include: [{
-                model: userPolicy,
-                as: "user_policies",
-                attributes: []
-            }],
-            group: ['users.id']
-        }).then(function (response) {
-            const optionsCSV = {
-                fieldSeparator: ',',
-                quoteStrings: '"',
-                decimalSeparator: '.',
-                showLabels: true,
-                showTitle: true,
-                useTextFile: false,
-                useBom: true,
-                useKeysAsHeaders: true,
-            };
-
-
-            response.forEach(function (item, index, arr) {
-                let row = [];
-                let name = "";
-                let userName = "";
-                let totalClient = "";
-                let totalComplaint = "";
-                let totalResolvedComplaint = "";
-
-                if (item.firstName) {
-                    name = item.firstName + " " + item.lastName;
-                }
-
-                if (item.userName) {
-                    userName = item.userName;
-                }
-
-                if (item.totalClient) {
-                    totalClient = item.totalClient;
-                }
-
-                if (item.totalComplaint) {
-                    totalComplaint = item.totalComplaint;
-                }
-
-                if (item.totalResolvedComplaint) {
-                    totalResolvedComplaint = item.totalResolvedComplaint;
-                }
-
-                if (downloadType == 'csv') {
-                    data.push({
-                        "HR Name": name,
-                        "HR Code": userName,
-                        "Clients": totalClient,
-                        "Complaint Assigned": totalComplaint,
-                        "Complaint Resolved": totalResolvedComplaint
-                    });
-                } else {
-                    row.push(name, userName, totalClient, totalComplaint, totalResolvedComplaint);
-                    conf.rows.push(row);
-                }
-            })
-
-            let result;
-            if (downloadType == 'csv') {
-                const csvExporter = new ExportToCsv(optionsCSV);
-                result = csvExporter.generateCsv(data, true);
-            } else {
-                result = nodeExcel.execute(conf);
-
-            }
-
-            res.setHeader("Content-Type", "application/vnd.openxmlformats");
-            res.setHeader(
-                "Content-Disposition",
-                "attachment; filename=HRList." + downloadType
-            );
-
-            return res.end(result, "binary");
-        });
-
-    } else {
-        return res.status(Constant.ERROR_CODE).json({
-            code: Constant.ERROR_CODE,
-            message: Constant.SOMETHING_WENT_WRONG,
-            data: {}
-        });
-    }
 }
 
 module.exports = agent;

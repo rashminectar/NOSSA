@@ -13,8 +13,7 @@ router.post('/resetPassword', account.resetPassword);
 router.post('/changePassword', middileware.checkAuthentication, account.changePassword);
 
 router.post('/getAllUsers', middileware.checkAuthentication, account.getAllUsers);
-router.post('/getUserByToken', account.getUserByToken);
-router.post('/getUserById', account.getUserById);
+router.get('/getUserById', middileware.checkAuthentication, account.getUserById);
 
 router.put('/updateProfile', middileware.checkAuthentication, account.updateProfile);
 

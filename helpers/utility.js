@@ -5,17 +5,14 @@ const path = require('path');
 const db = require("../models");
 const settings = db.settings;
 
-var utility = {};
-
-utility.randomString = (length) => {
+const randomString = (length) => {
     var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     var result = '';
     for (var i = length; i > 0; --i) result += chars[Math.round(Math.random() * (chars.length - 1))];
     return result;
 }
 
-
-utility.generateToken = (length) => {
+const generateToken = (length) => {
     return new Promise((resolve, reject) => {
         crypto.randomBytes(length, function (err, buf) {
             if (err) {
@@ -28,7 +25,7 @@ utility.generateToken = (length) => {
 
 }
 
-utility.generateCode = (prefix, type, length) => {
+const generateCode = (prefix, type, length) => {
     return new Promise((resolve, reject) => {
         let lastID = 0;
         settings.findOne({
@@ -47,7 +44,7 @@ utility.generateCode = (prefix, type, length) => {
     })
 }
 
-utility.fileupload = (claim_id, files) => {
+const fileupload = (files) => {
     return new Promise(async (resolve, reject) => {
         let listKeys = Object.keys(files);
         let listFiles = [];
@@ -56,27 +53,42 @@ utility.fileupload = (claim_id, files) => {
         StoreImages(0);
         async function StoreImages(i) {
             if (i < listKeys.length) {
-                let name = await utility.randomString(5);
+                let name = await randomString(5);
                 var filedata = files[listKeys[i]].mv(file_path + '/' + name + files[listKeys[i]].name, (error, data) => {
                     if (error) {
                         reject(null);
                     } else {
-                        listFiles.push({ claim_id: claim_id, documentName: listKeys[i], documentFile: name + files[listKeys[i]].name });
+                        listFiles.push({ documentName: listKeys[i], documentFile: name + files[listKeys[i]].name });
                         StoreImages(i + 1);
                     }
                 })
             } else {
-                console.log("listFiles ", listFiles)
                 resolve(listFiles);
             }
         }
     })
 }
 
-utility.uploadBase64Image = (imgBase64) => {
+const fileupload1 = async (files) => {
+    return new Promise(async (resolve, reject) => {
+        let listKeys = Object.keys(files);
+        let name = await randomString(5);
+        var currentPath = process.cwd();
+        var file_path = path.join(currentPath, '/public/images');
+        var filedata = files[listKeys[0]].mv(file_path + '/' + name + files[listKeys[0]].name, (error, data) => {
+            if (error) {
+                reject(null);
+            } else {
+                resolve(name + files[listKeys[0]].name);
+            }
+        })
+    })
+}
+
+const uploadBase64Image = (imgBase64) => {
 
     return new Promise(async (resolve, reject) => {
-        let name = await utility.randomString(12);
+        let name = await randomString(12);
         let mimeType = imgBase64.match(/[^:/]\w+(?=;|,)/)[0];
         let filename = 'img_' + name + '.' + mimeType;
         var currentPath = process.cwd();
@@ -97,5 +109,6 @@ utility.uploadBase64Image = (imgBase64) => {
 
 }
 
-
-module.exports = utility;
+module.exports = {
+    randomString, generateToken, generateCode, fileupload, fileupload1, uploadBase64Image
+};

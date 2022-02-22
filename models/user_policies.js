@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize');
-module.exports = function (sequelize, DataTypes) {
+module.exports = function(sequelize, DataTypes) {
   return sequelize.define('user_policies', {
     id: {
       autoIncrement: true,
@@ -36,12 +36,13 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: true
     },
     premiumAmount: {
-      type: DataTypes.DECIMAL(18, 2),
+      type: DataTypes.DECIMAL(18,2),
       allowNull: true
     },
     premiumStatus: {
       type: DataTypes.STRING(255),
-      allowNull: true
+      allowNull: true,
+      defaultValue: "Unpaid"
     },
     numberOfClaims: {
       type: DataTypes.INTEGER,
@@ -59,7 +60,7 @@ module.exports = function (sequelize, DataTypes) {
     policyStatus: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 1
     },
     status: {
       type: DataTypes.BOOLEAN,

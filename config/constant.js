@@ -34,5 +34,7 @@ module.exports = {
     DELETED_SUCCESS: 'Requested record deleted successfully',
     RETRIEVE_SUCCESS: 'Record(s) retrieve successfully',
     VERIFIED_SUCCESS: 'Request successfully verified.',
-
+    REQUEST_ALREADY_EXIST: 'Requested record is already exist.',
+    DATA_NOT_FOUND: "Data set is empty.",
+    REFERENCE_AVAILABLE: 'You can not Delete this record, because other record is dependent on this record.',
 }

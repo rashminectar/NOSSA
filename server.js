@@ -5,7 +5,6 @@ const bodyParser = require('body-parser')
 const logger = require("morgan");
 const cors = require('cors');
 const http = require('http');
-const db = require("./models");
 const fileUpload = require('express-fileupload')
 const Constant = require('./config/constant');
 const path = require('path');
@@ -19,22 +18,16 @@ app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: false, limit: '50mb', extended: true }))
 app.use(express.json());
 
-// parse application/json
-app.use(bodyParser.json())
 app.use(logger("dev")); // log every request to the console
 app.use(cors());
+
 // Note that this option available for versions 1.0.0 and newer. 
 app.use(fileUpload({
     useTempFiles: true,
     tempFileDir: '/tmp/'
 }));
 
-var dir = path.join(__dirname, '/public/images');
-
-app.use('/images', express.static(dir));
-
-// import route file
-
+app.use('/images', express.static(path.join(__dirname, '/public/images')));
 
 // user route file
 app.use('/account', require('./route/account'));
@@ -44,13 +37,18 @@ app.use('/premium', require('./route/premium'));
 app.use('/claim', require('./route/claim'));
 app.use('/complaint', require('./route/complaint'));
 app.use('/client', require('./route/client'));
+app.use('/servicerequest', require('./route/serviceRequest'));
+app.use('/holiday', require('./route/holiday'));
+app.use('/reimbursement', require('./route/reimbursement'));
+app.use('/notification', require('./route/notification'));
+app.use('/dashboard', require('./route/dashboard'));
+app.use('/supports', require('./route/supports'));
 
 // Handling non matching request from the client
 app.use((req, res, next) => {
     return res.status(Constant.NOT_FOUND).json({
         code: Constant.NOT_FOUND,
         message: Constant.REQUEST_NOT_FOUND,
-        data: res
     })
 })
 

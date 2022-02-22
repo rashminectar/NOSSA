@@ -12,10 +12,11 @@ const mail = require('../helpers/mail')
 
 const userPolicy = db.user_policies;
 let client = {};
+const Op = db.Op;
 
 client.add = async (req, res) => {
     try {
-        // const t = await sequelize.transaction();
+        const t = await sequelize.transaction();
         let clientData = await validation.client(req.body);
         if (clientData.message) {
             return res.status(Constant.ERROR_CODE).json({
@@ -24,64 +25,88 @@ client.add = async (req, res) => {
                 data: clientData.message
             })
         } else {
-            clientData.role = 4;
-            clientData.userName = await utility.generateCode('CD', 'clientId', 6);
-            let password = utility.randomString(6);
-            clientData.password = bcrypt.hashSync(password, salt);
+            users.findOne({
+                where: {
+                    status: true,
+                    email: clientData.email
+                }
+            }).then(async (resUser) => {
+                if (!resUser) {
+                    clientData.role = 4;
+                    clientData.userName = await utility.generateCode('CD', 'clientId', 6);
+                    let password = utility.randomString(6);
+                    clientData.password = bcrypt.hashSync(password, salt);
 
-            let objMail = {
-                userName: clientData.userName,
-                password: password,
-                email: clientData.email,
-            }
-            console.log("objMail ", objMail)
-            let { policy_id, premiumPlan, premiumAmount, policyStartDate, policyMaturityDate } = req.body;
+                    let objMail = {
+                        userName: clientData.userName,
+                        password: password,
+                        email: clientData.email,
+                    }
 
-            let clientPolicyData = {
-                policy_id: policy_id,
-                agent_id: req.user.userId,
-                premiumPlan: premiumPlan,
-                premiumAmount: premiumAmount,
-                policyStartDate: policyStartDate,
-                policyMaturityDate: policyMaturityDate
-            }
+                    let { policy_id, premiumPlan, premiumAmount, policyStartDate, policyMaturityDate } = req.body;
 
-            let result = await users.create(clientData);
-            if (result) {
+                    let clientPolicyData = {
+                        policy_id: policy_id,
+                        agent_id: req.user.userId,
+                        premiumPlan: premiumPlan,
+                        premiumAmount: premiumAmount,
+                        policyStartDate: policyStartDate,
+                        policyMaturityDate: policyMaturityDate
+                    }
 
-                clientPolicyData.user_id = result.id;
-                await mail.sendWelcomeMail(objMail);
+                    let result = await users.create(clientData, { transaction: t });
+                    if (result) {
 
-                let resultPolicy = await userPolicy.create(clientPolicyData);
+                        clientPolicyData.user_id = result.id;
+                        await mail.sendWelcomeMail(objMail);
 
-                if (resultPolicy) {
-                    return res.status(Constant.SUCCESS_CODE).json({
-                        code: Constant.SUCCESS_CODE,
-                        message: Constant.SAVE_SUCCESS,
-                        data: result
-                    })
+                        let resultPolicy = await userPolicy.create(clientPolicyData, { transaction: t });
+
+                        if (resultPolicy) {
+                            await t.commit();
+                            return res.status(Constant.SUCCESS_CODE).json({
+                                code: Constant.SUCCESS_CODE,
+                                message: Constant.SAVE_SUCCESS,
+                                data: result
+                            })
+                        } else {
+                            await t.rollback();
+                            return res.status(Constant.ERROR_CODE).json({
+                                code: Constant.ERROR_CODE,
+                                message: Constant.SOMETHING_WENT_WRONG,
+                                data: result
+                            })
+                        }
+                    } else {
+                        await t.rollback();
+                        return res.status(Constant.ERROR_CODE).json({
+                            code: Constant.ERROR_CODE,
+                            message: Constant.SOMETHING_WENT_WRONG,
+                            data: result
+                        })
+                    }
                 } else {
                     return res.status(Constant.ERROR_CODE).json({
                         code: Constant.ERROR_CODE,
-                        message: Constant.SOMETHING_WENT_WRONG,
-                        data: result
+                        message: Constant.EMAIL_ALREADY_REGISTERED,
+                        data: {}
                     })
                 }
-            } else {
-                // await t.rollback();
-                return res.status(Constant.ERROR_CODE).json({
-                    code: Constant.ERROR_CODE,
+            }).catch(async (error) => {
+                await t.rollback();
+                return res.status(Constant.SERVER_ERROR).json({
+                    code: Constant.SERVER_ERROR,
                     message: Constant.SOMETHING_WENT_WRONG,
-                    data: result
+                    data: error.message
                 })
-            }
+            })
         }
     } catch (error) {
-        console.log(error)
+        await t.rollback();
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     }
 }
@@ -119,7 +144,7 @@ client.delete = async (req, res) => {
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
                 message: Constant.SOMETHING_WENT_WRONG,
-                data: error
+                data: error.message
             })
         })
 
@@ -127,7 +152,7 @@ client.delete = async (req, res) => {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     }
 
@@ -146,15 +171,15 @@ client.getAllClient = async (req, res) => {
         }
 
         if (search) {
-            condition['$or'] = {
+            condition[Op.or] = {
                 firstName: {
-                    $like: `%${search}%`
+                    [Op.like]: `%${search}%`
                 },
                 lastName: {
-                    $like: `%${search}%`
+                    [Op.like]: `%${search}%`
                 },
                 userName: {
-                    $like: `%${search}%`
+                    [Op.like]: `%${search}%`
                 },
             }
         }
@@ -184,20 +209,17 @@ client.getAllClient = async (req, res) => {
                 data: result
             })
         }).catch(error => {
-            console.log("11 ", error)
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
                 message: Constant.SOMETHING_WENT_WRONG,
-                data: error
+                data: error.message
             })
         })
     } catch (error) {
-        console.log("22 ", error)
-
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     }
 

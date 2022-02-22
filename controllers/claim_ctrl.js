@@ -1,5 +1,6 @@
 'use strict'
 const validation = require('../helpers/validation')
+const claimMiddileware = require('../middileware/claim')
 const utility = require('../helpers/utility')
 var db = require("../models");
 const Constant = require('../config/constant');
@@ -9,7 +10,9 @@ const claims = db.claims;
 const userPolicy = db.user_policies;
 const claimDetails = db.claim_details;
 const claimDocuments = db.claim_documents;
+
 const claim = {};
+const Op = db.Op;
 
 claim.getAllClaim = async (req, res) => {
     try {
@@ -19,15 +22,15 @@ claim.getAllClaim = async (req, res) => {
         }
 
         if (policy_id) {
-            condition['$userPolicy.policy_id'] = policy_id;
+            condition['$userPolicy.policy_id$'] = policy_id;
         }
 
         if (user_id) {
-            condition['$userPolicy.user_id'] = user_id;
+            condition['$userPolicy.user_id$'] = user_id;
         }
 
         if (agent_id) {
-            condition['$userPolicy.agent_id'] = agent_id;
+            condition['$userPolicy.agent_id$'] = agent_id;
         }
 
         if (verifyStatus) {
@@ -35,21 +38,21 @@ claim.getAllClaim = async (req, res) => {
         }
 
         if (search) {
-            condition['$or'] = {
-                "$userPolicy.policy.policyName": {
-                    $like: `%${search}%`
+            condition[Op.or] = {
+                "$userPolicy.policy.policyName$": {
+                    [Op.like]: `%${search}%`
                 },
-                "$userPolicy.policy.policyCode": {
-                    $like: `%${search}%`
+                "$userPolicy.policy.policyCode$": {
+                    [Op.like]: `%${search}%`
                 },
-                "$userPolicy.user.firstName": {
-                    $like: `%${search}%`
+                "$userPolicy.user.firstName$": {
+                    [Op.like]: `%${search}%`
                 },
                 "claimCode": {
-                    $like: `%${search}%`
+                    [Op.like]: `%${search}%`
                 },
                 "verifyStatus": {
-                    $like: `%${search}%`
+                    [Op.like]: `%${search}%`
                 },
             }
         }
@@ -76,6 +79,7 @@ claim.getAllClaim = async (req, res) => {
                 where: {
                     status: true
                 },
+                attributes: ['policy_id', 'user_id', 'agent_id'],
                 include: [{
                     model: users,
                     as: "agent",
@@ -110,14 +114,14 @@ claim.getAllClaim = async (req, res) => {
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
                 message: Constant.SOMETHING_WENT_WRONG,
-                data: error
+                data: error.message
             })
         })
     } catch (error) {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     }
 
@@ -126,7 +130,6 @@ claim.getAllClaim = async (req, res) => {
 claim.add = async (req, res) => {
     try {
         let claimData = await validation.claim(req.body);
-
         if (claimData.message) {
             return res.status(Constant.ERROR_CODE).json({
                 code: Constant.ERROR_CODE,
@@ -161,17 +164,18 @@ claim.add = async (req, res) => {
                 lumpSumBenefitDetail: lumpSumBenefitDetail
             }
 
-
             let result = await claims.create(claimData);
             if (result) {
                 claimDetailData.claim_id = result.id;
                 await claimDetails.create(claimDetailData);
-                let claimDocumentData = [];
                 if (req.files) {
-                    claimDocumentData = await utility.fileupload(result.id, req.files);
-                }
-                if (claimDocumentData.length > 0) {
-                    await claimDocuments.bulkCreate(claimDocumentData);
+                    let claimDocumentData = await utility.fileupload(req.files);
+                    if (claimDocumentData.length > 0) {
+                        claimDocumentData.filter(obj => {
+                            obj.claim_id = result.id;
+                        });
+                        await claimDocuments.bulkCreate(claimDocumentData);
+                    }
                 }
 
                 return res.status(Constant.SUCCESS_CODE).json({
@@ -187,19 +191,17 @@ claim.add = async (req, res) => {
                 })
             }
         }
-
     } catch (error) {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     }
 }
 
 claim.edit = async (req, res) => {
     try {
-
         let { id, claimCode, name, phone, email, address, assignedTo, coveredByOtherInsurance, diagnosis, companyName, policyNo, sumInsured, relationWithInsured, relationName, relationGender, relationDOB, relationAge, relationOccupation, relationAddress, relationPhone, relationEmail } = req.body;
         let { hospitalName, roomCategory, reason, injuryCause, dateInjury, dateAdmission, dateDischarge, preHospitalExpense, hospitalExpense, postHospitalExpense, healthCheckupExpense, ambulanceExpense, otherExpense, preHospitalDuration, postHospitaDuration, hospitalDailyCash, surgicalCash, criticalIllnessbenefit, convalescence, lumpSumBenefit, otherCharges, lumpSumBenefitDetail } = req.body;
 
@@ -270,64 +272,63 @@ claim.edit = async (req, res) => {
                         await claimDetails.creat(claimDetailData);
                     }
 
-                    let claimDocumentData = [];
                     if (req.files) {
-                        claimDocumentData = await utility.fileupload(id, req.files);
-                    }
+                        let claimDocumentData = await utility.fileupload(req.files);
 
-                    claimDocuments.findAll({
-                        where: { claim_id: id, documentName: { $in: claimDocumentData.map(o => o['documentName']) } }
-                    }).then(async (resultDocuments) => {
-                        let listCreateDoc = [];
+                        if (claimDocumentData.length) {
+                            claimDocumentData.filter(obj => {
+                                obj.claim_id = id;
+                            })
 
-                        if (resultDocuments) {
-                            async function updateDoc(i) {
-                                if (i < claimDocumentData.length) {
-                                    let obj = claimDocumentData[i];
-                                    let objExist = resultDocuments.find(element => element.documentName === obj.documentName);
-                                    if (objExist) {
-                                        await objExist.update({
-                                            documentFile: obj.documentFile
-                                        });
-                                        updateDoc(i + 1);
+                            let resultDocuments = await claimDocuments.findAll({
+                                where: { claim_id: id, documentName: { [Op.in]: claimDocumentData.map(o => o['documentName']) } }
+                            })
+
+                            let listCreateDoc = [];
+
+                            if (resultDocuments) {
+                                async function updateDoc(i) {
+                                    if (i < claimDocumentData.length) {
+                                        let obj = claimDocumentData[i];
+                                        let objExist = resultDocuments.find(element => element.documentName === obj.documentName);
+                                        if (objExist) {
+                                            await objExist.update({
+                                                documentFile: obj.documentFile
+                                            });
+                                            updateDoc(i + 1);
+                                        } else {
+                                            listCreateDoc.push(obj);
+                                            updateDoc(i + 1);
+                                        }
                                     } else {
-                                        listCreateDoc.push(obj);
-                                        updateDoc(i + 1);
-                                    }
-                                } else {
-                                    if (listCreateDoc) {
-                                        await claimDocuments.bulkCreate(listCreateDoc);
+                                        if (listCreateDoc) {
+                                            await claimDocuments.bulkCreate(listCreateDoc);
+                                        }
                                     }
                                 }
+                                updateDoc(0);
+                            } else {
+                                await claimDocuments.bulkCreate(claimDocumentData);
                             }
-                            updateDoc(0);
-                        } else {
-                            await claimDocuments.bulkCreate(claimDocumentData);
                         }
+                    }
 
-                        return res.status(Constant.SUCCESS_CODE).json({
-                            code: Constant.SUCCESS_CODE,
-                            message: Constant.UPDATED_SUCCESS,
-                            data: result
-                        })
-                    }).catch(error => {
-                        return res.status(Constant.SERVER_ERROR).json({
-                            code: Constant.SERVER_ERROR,
-                            message: Constant.SOMETHING_WENT_WRONG,
-                            data: error
-                        })
+                    return res.status(Constant.SUCCESS_CODE).json({
+                        code: Constant.SUCCESS_CODE,
+                        message: Constant.UPDATED_SUCCESS,
+                        data: result
                     })
                 }).catch(error => {
                     return res.status(Constant.SERVER_ERROR).json({
                         code: Constant.SERVER_ERROR,
                         message: Constant.SOMETHING_WENT_WRONG,
-                        data: error
+                        data: error.message
                     })
                 })
             } else {
                 return res.status(Constant.ERROR_CODE).json({
                     code: Constant.ERROR_CODE,
-                    message: Constant.SOMETHING_WENT_WRONG,
+                    message: Constant.REQUEST_NOT_FOUND,
                     data: result
                 })
             }
@@ -336,14 +337,14 @@ claim.edit = async (req, res) => {
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
                 message: Constant.SOMETHING_WENT_WRONG,
-                data: error
+                data: error.message
             })
         })
     } catch (error) {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     }
 }
@@ -375,7 +376,7 @@ claim.delete = async (req, res) => {
             } else {
                 return res.status(Constant.ERROR_CODE).json({
                     code: Constant.ERROR_CODE,
-                    message: Constant.SOMETHING_WENT_WRONG,
+                    message: Constant.REQUEST_NOT_FOUND,
                     data: result
                 })
             }
@@ -384,7 +385,7 @@ claim.delete = async (req, res) => {
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
                 message: Constant.SOMETHING_WENT_WRONG,
-                data: error
+                data: error.message
             })
         })
 
@@ -392,14 +393,14 @@ claim.delete = async (req, res) => {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     }
 }
 
 claim.verifyRequest = async (req, res) => {
     try {
-        let { verifyStatus, VerifiedDate, id } = req.body;
+        let { verifyStatus, id } = req.body;
         claims.findOne({
             where: {
                 id: id,
@@ -408,7 +409,7 @@ claim.verifyRequest = async (req, res) => {
         }).then(async (result) => {
             if (result) {
                 let claimData = {
-                    VerifiedDate: VerifiedDate,
+                    VerifiedDate: new Date(),
                     verifyStatus: verifyStatus
                 }
                 await result.update(claimData);
@@ -420,7 +421,7 @@ claim.verifyRequest = async (req, res) => {
             } else {
                 return res.status(Constant.ERROR_CODE).json({
                     code: Constant.ERROR_CODE,
-                    message: Constant.SOMETHING_WENT_WRONG,
+                    message: Constant.REQUEST_NOT_FOUND,
                     data: result
                 })
             }
@@ -428,14 +429,14 @@ claim.verifyRequest = async (req, res) => {
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
                 message: Constant.SOMETHING_WENT_WRONG,
-                data: error
+                data: error.message
             })
         })
     } catch (error) {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error
+            data: error.message
         })
     }
 }

@@ -18,7 +18,6 @@ mail.sendWelcomeMail = async (objMail) => {
                 text: 'Nossa welcomes you',
                 html: '<h1>Welcome to NOSSA<h1><br/> Here is your credentials for login: <br/><b>Username: ' + objMail.userName + '<b/><br/><b>Password: ' + objMail.password + '<b/>'
             }
-            console.log("mailOptions ", mailOptions)
             let response = await mailer.sendEmail(mailOptions);
             resolve(response);
         })

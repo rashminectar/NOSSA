@@ -9,7 +9,8 @@ module.exports = function(sequelize, DataTypes) {
     },
     name: {
       type: DataTypes.STRING(255),
-      allowNull: true
+      allowNull: false,
+      unique: "name_UNIQUE"
     },
     date: {
       type: DataTypes.DATE,
@@ -39,6 +40,14 @@ module.exports = function(sequelize, DataTypes) {
         using: "BTREE",
         fields: [
           { name: "id" },
+        ]
+      },
+      {
+        name: "name_UNIQUE",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "name" },
         ]
       },
     ]
