@@ -213,7 +213,7 @@ const getDashboardChartData = async (req, res) => {
             }
             claimQuery += " WHERE tc.verifyStatus = 'Approved' " + conditionClaim;
             claimQuery += " GROUP BY MONTH(tc.VerifiedDate) ORDER BY YEAR(tc.VerifiedDate), MONTH(tc.VerifiedDate) ";
-
+            console.log("claimQuery ", claimQuery)
             const claimChart = await sequelize.query(claimQuery, { type: QueryTypes.SELECT });
 
             return res.status(Constant.SUCCESS_CODE).json({

@@ -412,7 +412,21 @@ claim.verifyRequest = async (req, res) => {
                     VerifiedDate: new Date(),
                     verifyStatus: verifyStatus
                 }
+
                 await result.update(claimData);
+
+                if (verifyStatus == 'Approved') {
+                    let userPolicyData = await userPolicy.findOne({
+                        where: {
+                            id: result.userPolicy_id
+                        }
+                    });
+                    if (userPolicyData) {
+                        await userPolicyData.update({
+                            numberOfClaims: parseInt(userPolicyData.numberOfClaims) + 1
+                        })
+                    }
+                }
                 return res.status(Constant.SUCCESS_CODE).json({
                     code: Constant.SUCCESS_CODE,
                     message: Constant.VERIFIED_SUCCESS,

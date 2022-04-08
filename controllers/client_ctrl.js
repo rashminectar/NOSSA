@@ -51,7 +51,8 @@ client.add = async (req, res) => {
                         premiumPlan: premiumPlan,
                         premiumAmount: premiumAmount,
                         policyStartDate: policyStartDate,
-                        policyMaturityDate: policyMaturityDate
+                        policyMaturityDate: policyMaturityDate,
+                        premiumStatus: "Paid"
                     }
 
                     let result = await users.create(clientData, { transaction: t });
@@ -102,7 +103,6 @@ client.add = async (req, res) => {
             })
         }
     } catch (error) {
-        await t.rollback();
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,

@@ -29,23 +29,38 @@ policies.create = async (req, res) => {
             }
             policy.findOne({
                 where: {
-                    id: id
+                    policyName: policyName,
+                    status: true,
+                    id: {
+                        [Op.ne]: id
+                    }
                 }
             }).then(async (result) => {
                 if (result) {
-                    result.update(policyData)
-                    return res.status(Constant.SUCCESS_CODE).json({
-                        code: Constant.SUCCESS_CODE,
-                        message: Constant.UPDATED_SUCCESS,
-                        data: result
-                    })
-
-                } else {
                     return res.status(Constant.ERROR_CODE).json({
                         code: Constant.ERROR_CODE,
-                        message: Constant.REQUEST_NOT_FOUND,
+                        message: Constant.REQUEST_ALREADY_EXIST,
                         data: result
                     })
+                } else {
+                    let resultData = await policy.update(policyData, {
+                        where: {
+                            id: id
+                        }
+                    })
+                    if (resultData[0]) {
+                        return res.status(Constant.SUCCESS_CODE).json({
+                            code: Constant.SUCCESS_CODE,
+                            message: Constant.UPDATED_SUCCESS,
+                            data: result
+                        })
+                    } else {
+                        return res.status(Constant.ERROR_CODE).json({
+                            code: Constant.ERROR_CODE,
+                            message: Constant.NO_DATA_FOUND,
+                            data: null
+                        })
+                    }
                 }
             }).catch(error => {
                 return res.status(Constant.SERVER_ERROR).json({
@@ -65,18 +80,24 @@ policies.create = async (req, res) => {
                 })
             } else {
                 policyData.policyCode = await utility.generateCode('NS', 'policyId', 6);
-                let result = await policy.create(policyData);
-                if (result) {
+                let result = await policy.findOrCreate({
+                    where: {
+                        policyName: policyData.policyName
+                    },
+                    defaults: policyData
+                });
+
+                if (result && result[1]) {
                     return res.status(Constant.SUCCESS_CODE).json({
                         code: Constant.SUCCESS_CODE,
                         message: Constant.SAVE_SUCCESS,
-                        data: result
+                        data: result[0]
                     })
                 } else {
                     return res.status(Constant.ERROR_CODE).json({
                         code: Constant.ERROR_CODE,
-                        message: Constant.SOMETHING_WENT_WRONG,
-                        data: result
+                        message: Constant.REQUEST_ALREADY_EXIST,
+                        data: result[0]
                     })
                 }
             }
@@ -94,32 +115,51 @@ policies.create = async (req, res) => {
 policies.delete = async (req, res) => {
     try {
         let { id } = req.body;
-
-        policy.findOne({
+        userPolicy.findOne({
             where: {
-                id: id
+                policy_id: id
             }
-        }).then(async (result) => {
-            if (result) {
-                let policyData = {
-                    status: 0
-                }
-                result.update(policyData)
+        }).then(async (userPolicyData) => {
+            if (!userPolicyData) {
+                policy.findOne({
+                    where: {
+                        id: id
+                    }
+                }).then(async (result) => {
+                    if (result) {
+                        let policyData = {
+                            status: 0
+                        }
+                        result.update(policyData)
 
-                return res.status(Constant.SUCCESS_CODE).json({
-                    code: Constant.SUCCESS_CODE,
-                    message: Constant.DELETED_SUCCESS,
-                    data: result
+                        return res.status(Constant.SUCCESS_CODE).json({
+                            code: Constant.SUCCESS_CODE,
+                            message: Constant.DELETED_SUCCESS,
+                            data: result
+                        })
+
+                    } else {
+                        return res.status(Constant.ERROR_CODE).json({
+                            code: Constant.ERROR_CODE,
+                            message: Constant.REQUEST_NOT_FOUND,
+                            data: result
+                        })
+                    }
+
+                }).catch(error => {
+                    return res.status(Constant.SERVER_ERROR).json({
+                        code: Constant.SERVER_ERROR,
+                        message: Constant.SOMETHING_WENT_WRONG,
+                        data: error.message
+                    })
                 })
-
             } else {
                 return res.status(Constant.ERROR_CODE).json({
                     code: Constant.ERROR_CODE,
-                    message: Constant.REQUEST_NOT_FOUND,
-                    data: result
+                    message: Constant.REFERENCE_AVAILABLE,
+                    data: null
                 })
             }
-
         }).catch(error => {
             return res.status(Constant.SERVER_ERROR).json({
                 code: Constant.SERVER_ERROR,
@@ -127,7 +167,6 @@ policies.delete = async (req, res) => {
                 data: error.message
             })
         })
-
     } catch (error) {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
@@ -148,10 +187,9 @@ policies.getAllPolicy = async (req, res) => {
             condition['policyType'] = policyType;
         }
 
-        if (activeStatus) {
-            condition['activeStatus'] = activeStatus;
+        if (activeStatus != "" && activeStatus >= 0) {
+            condition['activeStatus'] = parseInt(activeStatus);
         }
-
 
         if (id) {
             condition['id'] = id;
@@ -184,6 +222,10 @@ policies.getAllPolicy = async (req, res) => {
             where: condition,
             include: [{
                 model: userPolicy,
+                required: false,
+                where: {
+                    policyStatus: 1
+                },
                 as: "user_policies",
                 attributes: []
             }],

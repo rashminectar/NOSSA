@@ -146,6 +146,8 @@ validation.client = async (data) => {
         policy_id: Joi.required(),
         policyStartDate: Joi.required(),
         policyMaturityDate: Joi.required(),
+        premiumPlan: Joi.string().required(),
+        premiumAmount: Joi.required()
     }).unknown();
 
     try {

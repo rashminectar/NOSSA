@@ -106,7 +106,8 @@ premiums.payPremium = async (req, res) => {
     let premiumData = {
         paymentType: paymentType,
         paymentStatus: paymentStatus,
-        paymentDate: paymentDate
+        paymentDate: paymentDate,
+        premiumStatus: 'Paid'
     }
     premium.findOne({
         where: {
@@ -114,7 +115,19 @@ premiums.payPremium = async (req, res) => {
         }
     }).then(async (result) => {
         if (result) {
-            result.update(premiumData)
+            premiumData.invoiceNumber = await utility.generateCode('INV', 'invoiceNum', 6);
+            await result.update(premiumData);
+            await userPolicy.update({
+                premiumStatus: 'Paid',
+                policyStatus: 1
+            }, {
+                where: {
+                    id: result.userPolicy_id,
+                    policyStatus: {
+                        [Op.in]: [1, -1]
+                    }
+                }
+            });
             return res.status(Constant.SUCCESS_CODE).json({
                 code: Constant.SUCCESS_CODE,
                 message: Constant.UPDATED_SUCCESS,

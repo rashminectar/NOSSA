@@ -50,7 +50,7 @@ const addNotification = async (req, res) => {
                     where: {
                         status: true,
                         role: {
-                            $in: [3, 4]
+                            [Op.in]: [3, 4]
                         }
                     }
                 }).then(function (resUser) {
@@ -152,48 +152,33 @@ const editNotification = async (req, res) => {
 const deleteNotification = async (req, res) => {
     try {
         let { id } = req.body;
-        user_notification.findOne({
+        notification.findOne({
             where: {
-                notification_id: id
+                id: id,
+                status: true
             }
         }).then(async (result) => {
             if (result) {
-                return res.status(Constant.ERROR_CODE).json({
-                    code: Constant.ERROR_CODE,
-                    message: Constant.REFERENCE_AVAILABLE,
-                    data: {}
+                let objData = {
+                    status: false
+                }
+                await result.update(objData);
+                await user_notification.delete({
+                    where: {
+                        notification_id: id
+                    }
+                })
+
+                return res.status(Constant.SUCCESS_CODE).json({
+                    code: Constant.SUCCESS_CODE,
+                    message: Constant.DELETED_SUCCESS,
+                    data: result
                 })
             } else {
-                notification.findOne({
-                    where: {
-                        id: id,
-                        status: true
-                    }
-                }).then(async (result) => {
-                    if (result) {
-                        let objData = {
-                            status: false
-                        }
-                        await result.update(objData);
-
-                        return res.status(Constant.SUCCESS_CODE).json({
-                            code: Constant.SUCCESS_CODE,
-                            message: Constant.DELETED_SUCCESS,
-                            data: result
-                        })
-                    } else {
-                        return res.status(Constant.ERROR_CODE).json({
-                            code: Constant.ERROR_CODE,
-                            message: Constant.REQUEST_NOT_FOUND,
-                            data: result
-                        })
-                    }
-                }).catch(error => {
-                    return res.status(Constant.SERVER_ERROR).json({
-                        code: Constant.SERVER_ERROR,
-                        message: Constant.SOMETHING_WENT_WRONG,
-                        data: error.message
-                    })
+                return res.status(Constant.ERROR_CODE).json({
+                    code: Constant.ERROR_CODE,
+                    message: Constant.REQUEST_NOT_FOUND,
+                    data: result
                 })
             }
         }).catch(error => {

@@ -94,16 +94,24 @@ account.userLogin = async (req, res) => {
         }
       })
       if (result && bcrypt.compareSync(password, result.password)) {
-        if (role && role == result.role) {
+        if (result.status) {
+          if (role && role == result.role) {
 
-          callFunction();
-        } else if (!role && result.role == 1 || result.role == 2) {
+            callFunction();
+          } else if (!role && result.role == 1 || result.role == 2) {
 
-          callFunction();
+            callFunction();
+          } else {
+            return res.status(Constant.FORBIDDEN_CODE).json({
+              code: Constant.FORBIDDEN_CODE,
+              message: Constant.USER_EMAIL_PASSWORD,
+              data: null
+            })
+          }
         } else {
           return res.status(Constant.FORBIDDEN_CODE).json({
             code: Constant.FORBIDDEN_CODE,
-            message: Constant.USER_EMAIL_PASSWORD,
+            message: "Your account is deleted, please contact Administrator.",
             data: null
           })
         }

@@ -10,6 +10,7 @@ module.exports = {
     CONFLICT: 409,
     SERVER_ERROR: 500,
     REQUEST_NOT_FOUND: 'Request not found',
+    NO_DATA_FOUND: 'No data found',
     EMAIL_ALREADY_REGISTERED: 'Email already registered.',
     INVAILID_DATA: 'Registration form data is not correct.',
     USER_SAVE_SUCCESS: 'Registration completed successfully',
@@ -35,6 +36,5 @@ module.exports = {
     RETRIEVE_SUCCESS: 'Record(s) retrieve successfully',
     VERIFIED_SUCCESS: 'Request successfully verified.',
     REQUEST_ALREADY_EXIST: 'Requested record is already exist.',
-    DATA_NOT_FOUND: "Data set is empty.",
     REFERENCE_AVAILABLE: 'You can not Delete this record, because other record is dependent on this record.',
 }

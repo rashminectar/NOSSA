@@ -103,7 +103,7 @@ const updateDoctor = async (req, res) => {
                 return res.status(Constant.SERVER_ERROR).json({
                     code: Constant.SERVER_ERROR,
                     message: Constant.SOMETHING_WENT_WRONG,
-                    data: error.message.message
+                    data: error.message
                 })
             })
         } else {
@@ -117,7 +117,7 @@ const updateDoctor = async (req, res) => {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error.message.message
+            data: error.message
         })
     }
 }
@@ -260,7 +260,7 @@ const addServices = async (req, res) => {
 // updating services information
 const updateServices = async (req, res) => {
     try {
-        let { id, service } = serviceData;
+        let { id, service } = req.body;
 
         if (id) {
             reimbursement_service_master.findOne({
@@ -296,7 +296,7 @@ const updateServices = async (req, res) => {
                 return res.status(Constant.SERVER_ERROR).json({
                     code: Constant.SERVER_ERROR,
                     message: Constant.SOMETHING_WENT_WRONG,
-                    data: error.message.message
+                    data: error.message
                 })
             })
         } else {
@@ -312,7 +312,7 @@ const updateServices = async (req, res) => {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error.message.message
+            data: error.message
         })
     }
 }
@@ -560,7 +560,7 @@ const updateReimbursement = async (req, res) => {
                 return res.status(Constant.SERVER_ERROR).json({
                     code: Constant.SERVER_ERROR,
                     message: Constant.SOMETHING_WENT_WRONG,
-                    data: error.message.message
+                    data: error.message
                 })
             })
         } else {
@@ -574,7 +574,7 @@ const updateReimbursement = async (req, res) => {
         return res.status(Constant.SERVER_ERROR).json({
             code: Constant.SERVER_ERROR,
             message: Constant.SOMETHING_WENT_WRONG,
-            data: error.message.message
+            data: error.message
         })
     }
 }
